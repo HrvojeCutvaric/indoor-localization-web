@@ -1,12 +1,19 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  standalone: true,
   templateUrl: './app.html',
-  styleUrl: './app.scss'
+  styleUrls: ['./app.scss'],
+  imports: [FormsModule],
 })
 export class App {
-  protected readonly title = signal('indoor-localization');
+  email = '';
+  password = '';
+  showPassword = false;
+
+  onLogin() {
+    console.log('Login:', this.email, this.password);
+  }
 }

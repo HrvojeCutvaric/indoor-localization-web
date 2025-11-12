@@ -1,0 +1,181 @@
+.registration-page {
+    display: flex;
+    min-height: 100vh;
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    background: #0096e6; // contrast behind white panel
+
+    .left-panel {
+        flex: 1;
+        background: #0096e6;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        padding-left: 8%;
+        text-align: left;
+
+        h1 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            line-height: 1.2;
+            margin: 0;
+        }
+    }
+
+    .right-panel {
+        flex: 1.5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff;
+        border-top-left-radius: 60px;
+        border-bottom-left-radius: 60px;
+        box-shadow: -5px 0 25px rgba(0, 0, 0, 0.1);
+
+        .form-container {
+            width: 100%;
+            max-width: 360px;
+
+            h2 {
+                text-align: center;
+                font-weight: 700;
+                color: #333;
+                font-size: 1.75rem; //larger title
+                margin-bottom: 2.8rem; //more space below the heading
+                letter-spacing: 0.5px; //subtle refinement
+            }
+
+            form {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+    }
+
+    /* ---------- Floating label inputs ---------- */
+    .floating-group {
+        position: relative;
+        display: block;
+        margin-bottom: 1.15rem; //more space between fields
+
+        input {
+            width: 100%;
+            padding: 0.85rem 0.9rem;
+            border: 1.5px solid #ccc;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            outline: none;
+            background: #fff;
+            transition: border-color 0.15s ease;
+
+            &:focus {
+                border-color: #0096e6;
+            }
+
+            /* Float the label when focused or has value */
+            &:focus+label,
+            &:not(:placeholder-shown)+label {
+                top: -0.15rem; //lower float position
+                font-size: 0.8rem; //slightly bigger, better readability
+                color: #0096e6;
+                background: #fff;
+                padding: 0 0.25rem;
+            }
+        }
+
+        label {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+            pointer-events: none;
+            transition: all 0.15s ease;
+        }
+
+        /* Version with eye button inside */
+        &.has-toggle {
+            input {
+                padding-right: 2.6rem;
+            }
+
+            .toggle {
+                position: absolute;
+                top: 50%;
+                right: 0.5rem;
+                transform: translateY(-50%);
+                border: 0;
+                background: none;
+                padding: 0;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+
+                svg {
+                    width: 20px;
+                    height: 20px;
+                    fill: #2f6b8b;
+                    opacity: 0.85;
+                    transition: opacity 0.15s ease;
+                }
+
+                &:hover svg {
+                    opacity: 1;
+                }
+            }
+        }
+    }
+
+    /* Buttons / links */
+    .register-btn {
+        background: #0096e6;
+        color: #fff;
+        border: 0;
+        padding: 0.75rem;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        margin-top: 0.5rem;
+        transition: background 0.2s ease;
+
+        &:hover {
+            background: #007ac1;
+        }
+    }
+
+    .login-text {
+        text-align: center;
+        margin-top: 1rem;
+        font-size: 0.9rem;
+
+        .login-link {
+            color: #0096e6;
+            font-weight: 600;
+            text-decoration: none;
+            margin-left: 4px;
+
+            &:hover {
+                text-decoration: underline;
+            }
+        }
+    }
+
+    /* ---------- Responsivnes ---------- */
+    @media (max-width: 900px) {
+        flex-direction: column;
+        background: #fff;
+
+        .left-panel {
+            justify-content: center;
+            padding: 2rem 0;
+        }
+
+        .right-panel {
+            border-radius: 0;
+            box-shadow: none;
+        }
+    }
+}

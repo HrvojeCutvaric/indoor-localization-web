@@ -34,6 +34,34 @@
                     </div>
                 </div>
 
+                <!-- First Name -->
+                <div class="form-field"
+                    [ngClass]="{'has-error': (f.firstName.touched || submitted) && f.firstName.invalid}">
+                    <label for="firstName">First Name</label>
+                    <input id="firstName" type="text" formControlName="firstName" autocomplete="given-name" />
+                    <div class="assist-row">
+                        @if ((f.firstName.touched || submitted) && f.firstName.errors) {
+                        @if (f.firstName.errors['required']) { <span class="error-text">First name is required.</span> }
+                        @if (f.firstName.errors['minlength']) { <span class="error-text">Min 2 characters.</span> }
+                        @if (f.firstName.errors['maxlength']) { <span class="error-text">Max 30 characters.</span> }
+                        }
+                    </div>
+                </div>
+
+                <!-- Last Name -->
+                <div class="form-field"
+                    [ngClass]="{'has-error': (f.lastName.touched || submitted) && f.lastName.invalid}">
+                    <label for="lastName">Last Name</label>
+                    <input id="lastName" type="text" formControlName="lastName" autocomplete="family-name" />
+                    <div class="assist-row">
+                        @if ((f.lastName.touched || submitted) && f.lastName.errors) {
+                        @if (f.lastName.errors['required']) { <span class="error-text">Last name is required.</span> }
+                        @if (f.lastName.errors['minlength']) { <span class="error-text">Min 2 characters.</span> }
+                        @if (f.lastName.errors['maxlength']) { <span class="error-text">Max 30 characters.</span> }
+                        }
+                    </div>
+                </div>
+
                 <!-- Password -->
                 <div class="form-field"
                     [ngClass]="{'has-error': (f.password.touched || submitted) && f.password.invalid}">

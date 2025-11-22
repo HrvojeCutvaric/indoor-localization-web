@@ -7,6 +7,8 @@ import {
   ValidationErrors,
 } from '@angular/forms';
 import { NgClass } from '@angular/common';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Router, RouterLink } from '@angular/router';
 
 function passwordMatch(group: AbstractControl): ValidationErrors | null {
   const a = group.get('password')?.value;
@@ -17,12 +19,17 @@ function passwordMatch(group: AbstractControl): ValidationErrors | null {
 @Component({
   selector: 'app-registration',
   standalone: true,
-  imports: [ReactiveFormsModule, NgClass],
+  imports: [ReactiveFormsModule, NgClass, RouterLink],
   templateUrl: './registration.html',
   styleUrls: ['./registration.scss'],
 })
 export class Registration {
   private fb = inject(FormBuilder);
+  private http = inject(HttpClient);
+  private router = inject(Router);
+
+  isLoading = false;
+  apiError: string | null = null;
 
   showPassword = false;
   showConfirmPassword = false;
@@ -39,7 +46,9 @@ export class Registration {
         [
           Validators.required,
           // ≥8 chars, at least one letter & one number (adjust as needed)
-          Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d!@#$%^&*()_+\-={}[\]|:;"'<>,.?/]{8,}$/),
+          Validators.pattern(
+            /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d!@#$%^&*()_+\-={}[\]|:;"'<>,.?/]{8,}$/
+          ),
         ],
       ],
       confirmPassword: ['', Validators.required],
@@ -51,16 +60,55 @@ export class Registration {
     return this.form.controls;
   }
 
-  togglePassword()        { this.showPassword = !this.showPassword; }
-  toggleConfirmPassword() { this.showConfirmPassword = !this.showConfirmPassword; }
+  togglePassword() {
+    this.showPassword = !this.showPassword;
+  }
+  toggleConfirmPassword() {
+    this.showConfirmPassword = !this.showConfirmPassword;
+  }
 
   submit() {
     this.submitted = true;
+    this.apiError = null;
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
-    // TODO: replace with real API call
-    console.log('Registration payload:', this.form.value);
+
+    this.isLoading = true;
+
+    const { email, username, firstName, lastName, password } = this.form.value;
+
+    const payload = {
+      email,
+      username,
+      firstName,
+      lastName,
+      password,
+    };
+
+    this.http.post('/register', payload).subscribe({
+      next: () => {
+        this.isLoading = false;
+        // Success → redirect to login page
+        this.router.navigate(['/login'], {
+          queryParams: { registered: 'true' },
+        });
+      },
+      error: (error: HttpErrorResponse) => {
+        this.isLoading = false;
+
+        if (error.status === 409) {
+          this.apiError = 'Email is already registered.';
+        } else if (error.status === 400) {
+          this.apiError = 'Invalid input. Please check your data.';
+        } else if (error.status === 0) {
+          this.apiError = 'Cannot reach the server. Please try again later.';
+        } else {
+          this.apiError = 'Something went wrong. Please try again.';
+        }
+      },
+    });
   }
 }

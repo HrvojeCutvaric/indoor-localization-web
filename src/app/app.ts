@@ -1,19 +1,11 @@
 import { Component } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
   standalone: true,
   templateUrl: './app.html',
   styleUrls: ['./app.scss'],
-  imports: [FormsModule],
+  imports: [RouterOutlet],
 })
-export class App {
-  email = '';
-  password = '';
-  showPassword = false;
-
-  onLogin() {
-    console.log('Login:', this.email, this.password);
-  }
-}
+export class App {}

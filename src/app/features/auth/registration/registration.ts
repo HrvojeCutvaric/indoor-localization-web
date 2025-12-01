@@ -88,7 +88,7 @@ export class Registration {
       password,
     };
 
-    this.http.post('/register', payload).subscribe({
+    this.http.post('/api/Auth/register', payload).subscribe({
       next: () => {
         this.isLoading = false;
         // Success → redirect to login page

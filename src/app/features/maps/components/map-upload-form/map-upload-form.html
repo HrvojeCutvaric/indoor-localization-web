@@ -1,0 +1,67 @@
+<div class="upload-form-container">
+  <h3>{{ mapId ? 'Update Map' : 'Upload New Map' }}</h3>
+
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <!-- Name Field -->
+    <div class="form-group" [ngClass]="{ 'has-error': f['name'].invalid && f['name'].touched }">
+      <label for="name">Map Name *</label>
+      <input
+        type="text"
+        id="name"
+        formControlName="name"
+        placeholder="e.g., Ground Floor"
+        [disabled]="isLoading"
+      />
+      <div class="error-text" *ngIf="f['name'].invalid && f['name'].touched">
+        <span *ngIf="f['name'].errors?.['required']">Name is required.</span>
+        <span *ngIf="f['name'].errors?.['minlength']">Min 3 characters.</span>
+      </div>
+    </div>
+
+    <!-- Image Upload Field -->
+    <div class="form-group image-upload">
+      <label for="image">Map Image *</label>
+      <div class="image-input-wrapper">
+        <input
+          type="file"
+          id="image"
+          (change)="onFileSelected($event)"
+          accept="image/*"
+          [disabled]="isLoading"
+        />
+        <span class="file-label">Choose Image</span>
+      </div>
+      <div class="error-text" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+    </div>
+
+    <!-- Image Preview -->
+    <div class="image-preview" *ngIf="filePreview">
+      <img [src]="filePreview" alt="Map preview" />
+    </div>
+
+    <!-- API Error -->
+    <div class="api-error" *ngIf="errorMessage && !selectedFile">
+      {{ errorMessage }}
+    </div>
+
+    <!-- Form Actions -->
+    <div class="form-actions">
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="form.invalid || isLoading"
+      >
+        <span *ngIf="!isLoading">{{ mapId ? 'Update Map' : 'Upload Map' }}</span>
+        <span *ngIf="isLoading" class="loading-spinner">
+          <span class="spinner"></span>
+          Uploading...
+        </span>
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="isLoading">
+        Cancel
+      </button>
+    </div>
+  </form>
+</div>

@@ -1,0 +1,74 @@
+<div class="login-container">
+  <div class="left-panel">
+    <h1>Indoor<br />Localization</h1>
+  </div>
+
+  <div class="right-panel">
+    <div class="login-card">
+      <h2>Login</h2>
+
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <!-- Email Field -->
+        <div class="form-group" [ngClass]="{ 'has-error': (f.email.touched || submitted) && f.email.invalid }">
+          <label for="email">Email</label>
+          <input
+            type="email"
+            id="email"
+            formControlName="email"
+            autocomplete="email"
+            [disabled]="isLoading"
+          />
+          <div class="error-text" *ngIf="(f.email.touched || submitted) && f.email.errors">
+            <span *ngIf="f.email.errors['required']">Email is required.</span>
+            <span *ngIf="f.email.errors['email']">Enter a valid email.</span>
+          </div>
+        </div>
+
+        <!-- Password Field -->
+        <div class="form-group" [ngClass]="{ 'has-error': (f.password.touched || submitted) && f.password.invalid }">
+          <label for="password">Password</label>
+          <div class="password-wrapper">
+            <input
+              [type]="showPassword ? 'text' : 'password'"
+              id="password"
+              formControlName="password"
+              autocomplete="current-password"
+              [disabled]="isLoading"
+            />
+            <button
+              type="button"
+              class="toggle-btn"
+              (click)="togglePassword()"
+              [disabled]="isLoading"
+            >
+              👁️
+            </button>
+          </div>
+          <div class="error-text" *ngIf="(f.password.touched || submitted) && f.password.errors">
+            <span *ngIf="f.password.errors['required']">Password is required.</span>
+            <span *ngIf="f.password.errors['minlength']">Min 6 characters.</span>
+          </div>
+        </div>
+
+        <!-- API Error -->
+        <div class="api-error" *ngIf="apiError">
+          {{ apiError }}
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="login-btn" [disabled]="form.invalid || isLoading">
+          <span *ngIf="!isLoading">Login</span>
+          <span *ngIf="isLoading" class="loading-spinner">
+            <span class="spinner"></span>
+            Logging in...
+          </span>
+        </button>
+
+        <p class="register-text">
+          Don't have an account?
+          <a class="register-link" routerLink="/register">Register</a>
+        </p>
+      </form>
+    </div>
+  </div>
+</div>

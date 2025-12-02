@@ -64,7 +64,8 @@
               "buildTarget": "indoor-localization:build:production"
             },
             "development": {
-              "buildTarget": "indoor-localization:build:development"
+              "buildTarget": "indoor-localization:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"

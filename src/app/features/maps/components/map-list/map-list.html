@@ -1,0 +1,25 @@
+<div class="map-list-container">
+  <div class="empty-state" *ngIf="maps.length === 0 && !loading">
+    <p class="empty-message">No maps available. Upload your first map to get started.</p>
+  </div>
+
+  <div class="maps-grid" *ngIf="maps.length > 0">
+    <div class="map-card" *ngFor="let map of maps">
+      <div class="map-image-wrapper">
+        <img [src]="map.image" [alt]="map.name" class="map-image" />
+        <div class="map-overlay">
+          <button class="btn-icon edit" (click)="onEdit(map.id)" title="Edit map">
+            ✏️
+          </button>
+          <button class="btn-icon delete" (click)="onDelete(map.id)" title="Delete map">
+            🗑️
+          </button>
+        </div>
+      </div>
+
+      <div class="map-info">
+        <h4 class="map-name">{{ map.name }}</h4>
+      </div>
+    </div>
+  </div>
+</div>

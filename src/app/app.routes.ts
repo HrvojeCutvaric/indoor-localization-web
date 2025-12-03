@@ -19,4 +19,10 @@ export const routes: Routes = [
       import('./features/maps/components/map-canvas/map-canvas')
         .then(m => m.MapCanvasComponent),
   },
+  {
+    path: 'maps',
+    loadComponent: () =>
+      import('./features/maps/map-management')
+        .then(m => m.MapManagement),
+  },
 ];

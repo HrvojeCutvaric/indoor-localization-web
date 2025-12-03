@@ -23,17 +23,14 @@ export class MapCanvasComponent implements AfterViewInit {
   private image!: HTMLImageElement;
   private imageLoaded = false;
 
-  //scale & offset
   private scale = 1;
   private baseScale = 1;
   private offsetX = 0;
   private offsetY = 0;
 
-  //fizicke dimenzije floormape u metrima (hardcodirano za sada)
   private floorWidthMeters = 40;
   private floorHeightMeters = 40;
 
-  //px po metru – racunamo kad se ucita slika
   private pxPerMeterX = 1;
   private pxPerMeterY = 1;
 
@@ -82,19 +79,14 @@ export class MapCanvasComponent implements AfterViewInit {
   private setupScaleAndOffset(): void {
     const canvas = this.canvasRef.nativeElement;
 
-    //skaliranje da slika stane
     const scaleX = canvas.width / this.image.width;
     const scaleY = canvas.height / this.image.height;
     this.baseScale = Math.min(scaleX, scaleY);
     this.scale = this.baseScale;
 
-    //centriranje slike unutar canvasa
-    this.offsetX =
-      (canvas.width - this.image.width * this.scale) / 2;
-    this.offsetY =
-      (canvas.height - this.image.height * this.scale) / 2;
+    this.offsetX = (canvas.width - this.image.width * this.scale) / 2;
+    this.offsetY = (canvas.height - this.image.height * this.scale) / 2;
 
-    //px/metar – za koordinatni sustav
     this.pxPerMeterX = this.image.width / this.floorWidthMeters;
     this.pxPerMeterY = this.image.height / this.floorHeightMeters;
   }
@@ -105,11 +97,9 @@ export class MapCanvasComponent implements AfterViewInit {
     const canvas = this.canvasRef.nativeElement;
     const ctx = this.ctx;
 
-    // reset transform i clear
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    //scale & offset
     ctx.setTransform(
       this.scale,
       0,
@@ -119,10 +109,8 @@ export class MapCanvasComponent implements AfterViewInit {
       this.offsetY
     );
 
-    // 1) floormap
     ctx.drawImage(this.image, 0, 0);
 
-    // 2) koordinatni sustav
     this.drawCoordinateSystem();
   }
 
@@ -131,7 +119,6 @@ export class MapCanvasComponent implements AfterViewInit {
     const imgW = this.image.width;
     const imgH = this.image.height;
 
-    //  internal drawing padding (moves axes inward)
     const pad = 20 / this.scale;
 
     ctx.save();
@@ -142,7 +129,6 @@ export class MapCanvasComponent implements AfterViewInit {
 
     const step = 5;
 
-    // === X axis (bottom) ===
     const xAxisY = imgH - pad;
 
     ctx.beginPath();
@@ -158,14 +144,9 @@ export class MapCanvasComponent implements AfterViewInit {
       ctx.lineTo(x, xAxisY - 6 / this.scale);
       ctx.stroke();
 
-      ctx.fillText(
-        m.toString(),
-        x - 4 / this.scale,
-        xAxisY + 14 / this.scale
-      );
+      ctx.fillText(m.toString(), x - 4 / this.scale, xAxisY + 14 / this.scale);
     }
 
-    // === Y axis (left) ===
     const yAxisX = pad;
 
     ctx.beginPath();
@@ -181,11 +162,7 @@ export class MapCanvasComponent implements AfterViewInit {
       ctx.lineTo(yAxisX + 6 / this.scale, y);
       ctx.stroke();
 
-      ctx.fillText(
-        m.toString(),
-        yAxisX + 10 / this.scale,
-        y + 4 / this.scale
-      );
+      ctx.fillText(m.toString(), yAxisX + 10 / this.scale, y + 4 / this.scale);
     }
 
     ctx.restore();

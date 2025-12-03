@@ -2,7 +2,6 @@
   <h3>{{ mapId ? 'Update Map' : 'Upload New Map' }}</h3>
 
   <form [formGroup]="form" (ngSubmit)="submit()">
-    <!-- Name Field -->
     <div class="form-group" [ngClass]="{ 'has-error': f['name'].invalid && f['name'].touched }">
       <label for="name">Map Name *</label>
       <input
@@ -17,8 +16,6 @@
         <span *ngIf="f['name'].errors?.['minlength']">Min 3 characters.</span>
       </div>
     </div>
-
-    <!-- Image Upload Field -->
     <div class="form-group image-upload">
       <label for="image">Map Image *</label>
       <div class="image-input-wrapper">
@@ -35,18 +32,12 @@
         {{ errorMessage }}
       </div>
     </div>
-
-    <!-- Image Preview -->
     <div class="image-preview" *ngIf="filePreview">
       <img [src]="filePreview" alt="Map preview" />
     </div>
-
-    <!-- API Error -->
     <div class="api-error" *ngIf="errorMessage && !selectedFile">
       {{ errorMessage }}
     </div>
-
-    <!-- Form Actions -->
     <div class="form-actions">
       <button
         type="submit"

@@ -48,7 +48,7 @@ export class MapUploadForm implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     if (this.mapId) {
-      // Load map data for editing
+      
       this.mapService.maps$
         .pipe(takeUntil(this.destroy$))
         .subscribe((maps: Map[]) => {
@@ -72,24 +72,26 @@ export class MapUploadForm implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       this.selectedFile = input.files[0];
-
-      // Validate file type
+      
+      
+      
       if (!this.selectedFile.type.startsWith('image/')) {
         this.errorMessage = 'Please select a valid image file';
         this.selectedFile = null;
         return;
       }
-
-      // Validate file size (max 5MB)
+      
+      
       if (this.selectedFile.size > 5 * 1024 * 1024) {
         this.errorMessage = 'File size must be less than 5MB';
         this.selectedFile = null;
         return;
       }
-
       this.errorMessage = null;
 
-      // Show preview
+      
+      
+      
       const reader = new FileReader();
       reader.onload = (e) => {
         this.filePreview = (e.target as FileReader).result as string;

@@ -42,9 +42,6 @@ export class MapManagement implements OnInit, OnDestroy {
   }
 
   onMapUploaded(): void {
-    // Close upload form. The MapService already updates `maps$` when a
-    // new map is created, so avoid reloading the mock list (which would
-    // overwrite newly created entries during development).
     this.showUploadForm = false;
     this.selectedMapId = null;
   }

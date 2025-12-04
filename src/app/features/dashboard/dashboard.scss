@@ -1,0 +1,134 @@
+.dashboard-container {
+    min-height: 100vh;
+    background-color: #f5f5f5;
+}
+
+.dashboard-header {
+    background-color: #0095db;
+    color: #ffffff;
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+    }
+
+    .dashboard-title {
+        margin: 0;
+        font-size: 1.6rem;
+        font-weight: 600;
+    }
+
+    .main-nav {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .nav-link {
+        border: none;
+        background: transparent;
+        color: #e3f4fc;
+        font-size: 0.95rem;
+        font-weight: 500;
+        padding: 0.4rem 0.9rem;
+        border-radius: 999px;
+        cursor: pointer;
+        transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
+
+        &:hover {
+            background-color: rgba(255, 255, 255, 0.18);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        &.is-active {
+            background-color: #ffffff;
+            color: #0095db;
+        }
+    }
+}
+
+.logout-btn {
+    background-color: #ffffff;
+    color: #0095db;
+    border: none;
+    padding: 0.6rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+
+    &:hover {
+        background-color: #f0f0f0;
+        transform: translateY(-1px);
+    }
+}
+
+.dashboard-content {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+
+    .section {
+        background-color: #ffffff;
+        border-radius: 12px;
+        padding: 1.5rem 1.75rem;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+    }
+
+    h2 {
+        margin-top: 0;
+        margin-bottom: 1rem;
+        font-size: 1.3rem;
+        color: #222;
+    }
+
+    p {
+        font-size: 1.05rem;
+        color: #333;
+        margin-bottom: 0.75rem;
+    }
+}
+
+.success-banner {
+    position: fixed;
+    top: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #2e7d32;
+    color: #ffffff;
+    padding: 0.8rem 1.8rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    font-size: 1rem;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    pointer-events: none;
+    opacity: 0;
+    animation: fadeSlide 0.45s ease-out forwards;
+}
+
+@keyframes fadeSlide {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+.section-maps {
+    max-width: 1800px;
+    width: 100%;
+    margin: 0 auto;
+}

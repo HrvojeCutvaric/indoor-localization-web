@@ -1,176 +1,154 @@
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
-import { tap, catchError, delay, switchMap } from 'rxjs/operators';
+import { Observable, catchError, map, of, tap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
-export interface LoginRequest {
-  email: string;
-  password: string;
+interface RefreshResponse {
+    accessToken: string;
+    refreshToken: string;
 }
 
 export interface LoginResponse {
-  token: string;
-  user?: {
-    id: string;
+    accessToken: string;
+    refreshToken: string;
+    userId: number;
+    username: string;
     email: string;
-    firstName?: string;
-    lastName?: string;
-  };
 }
 
 export interface AuthError {
-  message: string;
-  code?: string;
+    message: string;
+    code?: string | number;
+}
+
+export interface RegisterPayload {
+    email: string | null;
+    username: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    password: string | null;
 }
 
 @Injectable({
-  providedIn: 'root',
+    providedIn: 'root',
 })
+
 export class AuthService {
-  private apiUrl = `${environment.apiUrl}/api/login`;
-  private tokenKey = 'auth_token';
-  private isAuthenticatedSubject = new BehaviorSubject<boolean>(this.hasToken());
+    private http = inject(HttpClient);
+    private router = inject(Router);
 
-  isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
+    private readonly ACCESS_TOKEN_KEY = 'access_token';
+    private readonly REFRESH_TOKEN_KEY = 'refresh_token';
 
-  private mockUsers = [
-    { email: 'test@example.com', password: 'password123' },
-    { email: 'demo@demo.com', password: 'demo1234' },
-  ];
-
-  constructor(
-    private http: HttpClient,
-    private router: Router,
-  ) {
-    this.checkTokenValidity();
-  }
-
-
-  login(email: string, password: string): Observable<LoginResponse> {
-    const payload: LoginRequest = { email, password };
-
-   
-    if (!environment.production) {
-      console.log('🔍 Development mode: Using mock authentication');
-      return of(null).pipe(
-        delay(1500), 
-        switchMap(() => {
-
-          const user = this.mockUsers.find(
-            (u) => u.email === email && u.password === password,
-          );
-
-          if (user) {
-            console.log('✅ Mock credentials valid');
-            return of({
-              token: 'mock-jwt-token-' + Date.now(),
-              user: {
-                id: '1',
-                email: user.email,
-                firstName: 'Test',
-                lastName: 'User',
-              },
-            });
-          } else {
-            console.log('❌ Mock credentials invalid');
-            return throwError(
-              () =>
-                new Error('Invalid email or password'),
-            );
-          }
-        }),
-        tap((response) => {
-          if (response.token) {
-            this.storeToken(response.token);
-            this.isAuthenticatedSubject.next(true);
-          }
-        }),
-        catchError((error) => {
-          const authError: AuthError = {
-            message: error.message || 'Login failed. Please try again.',
-            code: '401',
-          };
-          return throwError(() => authError);
-        }),
-      );
+    getAccessToken(): string | null {
+        return localStorage.getItem(this.ACCESS_TOKEN_KEY);
     }
 
- 
-    return this.http.post<LoginResponse>(this.apiUrl, payload).pipe(
-      tap((response) => {
-        if (response.token) {
-          this.storeToken(response.token);
-          this.isAuthenticatedSubject.next(true);
-        }
-      }),
-      catchError((error) => {
-        const authError: AuthError = {
-          message: this.extractErrorMessage(error),
-          code: error.status,
+    getRefreshToken(): string | null {
+        return localStorage.getItem(this.REFRESH_TOKEN_KEY);
+    }
+
+    setTokens(accessToken: string, refreshToken: string): void {
+        localStorage.setItem(this.ACCESS_TOKEN_KEY, accessToken);
+        localStorage.setItem(this.REFRESH_TOKEN_KEY, refreshToken);
+    }
+
+    clearTokens(): void {
+        localStorage.removeItem(this.ACCESS_TOKEN_KEY);
+        localStorage.removeItem(this.REFRESH_TOKEN_KEY);
+    }
+
+    isAuthenticated(): boolean {
+        return !!this.getAccessToken() && !!this.getRefreshToken();
+    }
+
+    login(username: string, password: string): Observable<LoginResponse> {
+        const url = `${environment.apiUrl}/Auth/login`;
+
+        const body = {
+            username,
+            password,
         };
-        return throwError(() => authError);
-      }),
-    );
-  }
 
-  
-  logout(): void {
-    this.clearToken();
-    this.isAuthenticatedSubject.next(false);
-    this.router.navigate(['/login']);
-  }
-
-
-  getToken(): string | null {
-    return localStorage.getItem(this.tokenKey);
-  }
-
-  isAuthenticated(): boolean {
-    return this.hasToken();
-  }
-
-
-  private storeToken(token: string): void {
-    localStorage.setItem(this.tokenKey, token);
-  }
-
-
-  private clearToken(): void {
-    localStorage.removeItem(this.tokenKey);
-  }
-
-  private hasToken(): boolean {
-    return !!localStorage.getItem(this.tokenKey);
-  }
-
-
-  private checkTokenValidity(): void {
-    const token = this.getToken();
-    if (token) {
-
-      this.isAuthenticatedSubject.next(true);
+        return this.http.post<LoginResponse>(url, body).pipe(
+            tap((response) => {
+                this.setTokens(response.accessToken, response.refreshToken);
+            }),
+            catchError((error: HttpErrorResponse) => {
+                const authError: AuthError = {
+                    message: this.extractErrorMessage(error),
+                    code: error.status,
+                };
+                return throwError(() => authError);
+            }),
+        );
     }
-  }
 
+    register(payload: RegisterPayload): Observable<void> {
+        const url = `${environment.apiUrl}/Auth/register`;
 
-  private extractErrorMessage(error: any): string {
-    if (error?.error?.message) {
-      return error.error.message;
+        return this.http.post(url, payload).pipe(
+            map(() => void 0),
+            catchError((error: HttpErrorResponse) => throwError(() => error)),
+        );
     }
-    if (error?.error?.error) {
-      return error.error.error;
+
+    refreshTokens(): Observable<boolean> {
+        const accessToken = this.getAccessToken();
+        const refreshToken = this.getRefreshToken();
+
+        if (!accessToken || !refreshToken) {
+            return of(false);
+        }
+
+        const url = `${environment.apiUrl}/Auth/refresh`;
+
+        const body = {
+            accessToken,
+            refreshToken,
+        };
+
+        return this.http.post<RefreshResponse>(url, body).pipe(
+            tap((response) => {
+                this.setTokens(response.accessToken, response.refreshToken);
+            }),
+            map(() => true),
+            catchError(() => {
+                this.clearTokens();
+                return of(false);
+            }),
+        );
     }
-    switch (error?.status) {
-      case 401:
-        return 'Invalid email or password';
-      case 400:
-        return 'Missing required fields';
-      case 500:
-        return 'Server error. Please try again later.';
-      default:
-        return 'Login failed. Please try again.';
+
+    logout(): void {
+        this.clearTokens();
+        this.router.navigate(['/login']);
     }
-  }
+
+    logoutAndRedirectToLogin(): void {
+        this.logout();
+    }
+
+    private extractErrorMessage(error: HttpErrorResponse): string {
+        if (error?.error?.message) {
+            return error.error.message;
+        }
+        if (error?.error?.error) {
+            return error.error.error;
+        }
+
+        switch (error.status) {
+            case 0:
+                return 'Cannot reach the server. Please try again later.';
+            case 400:
+                return 'Invalid input. Please check your credentials.';
+            case 401:
+                return 'Invalid username or password.';
+            case 500:
+                return 'Server error. Please try again later.';
+            default:
+                return 'Login failed. Please try again.';
+        }
+    }
 }

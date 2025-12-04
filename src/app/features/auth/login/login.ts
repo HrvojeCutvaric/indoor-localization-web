@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { CommonModule, NgClass } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { AuthService, AuthError } from '../../../core/services/auth.service';
@@ -13,19 +13,22 @@ import { AuthService, AuthError } from '../../../core/services/auth.service';
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })
+
 export class Login implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private destroy$ = new Subject<void>();
 
   isLoading = false;
   apiError: string | null = null;
   showPassword = false;
   submitted = false;
+  successMessage: string | null = null;
 
   form = this.fb.group({
-    email: ['', [Validators.required, Validators.email]],
+    username: ['', [Validators.required, Validators.minLength(3)]],
     password: ['', [Validators.required, Validators.minLength(6)]],
   });
 
@@ -34,10 +37,31 @@ export class Login implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // Redirect to dashboard if already authenticated
     if (this.authService.isAuthenticated()) {
       this.router.navigate(['/dashboard']);
+      return;
     }
+
+    this.route.queryParamMap
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((params) => {
+        const registered = params.get('registered');
+
+        if (registered === 'true') {
+          this.successMessage = 'Registration successful. You can now log in.';
+
+          setTimeout(() => {
+            this.successMessage = null;
+          }, 6000);
+
+          this.router.navigate([], {
+            relativeTo: this.route,
+            queryParams: { registered: null },
+            queryParamsHandling: 'merge',
+            replaceUrl: true,
+          });
+        }
+      });
   }
 
   ngOnDestroy(): void {
@@ -60,31 +84,34 @@ export class Login implements OnInit, OnDestroy {
 
     this.isLoading = true;
 
-    const { email, password } = this.form.value;
+    const { username, password } = this.form.value;
 
     this.authService
-      .login(email || '', password || '')
+      .login(username || '', password || '')
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          // Redirect to dashboard on success
-          this.router.navigate(['/dashboard']);
+          this.isLoading = false;
+          this.router.navigate(['/dashboard'], {
+            queryParams: { login: 'success' }
+          });
         },
         error: (error: AuthError) => {
           this.isLoading = false;
-          
-          // Map error codes to user-friendly messages
-          if (error.code === '401') {
-            this.apiError = 'Invalid email or password.';
-          } else if (error.code === '400') {
-            this.apiError = 'Invalid input. Please check your credentials.';
-          } else if (error.code === '0') {
-            this.apiError = 'Cannot reach the server. Please try again later.';
+
+          if (error.code === 401) {
+            this.apiError = 'Invalid username or password.';
+          } else if (error.code === 400) {
+            this.apiError =
+              'Invalid input. Please check your credentials.';
+          } else if (error.code === 0) {
+            this.apiError =
+              'Cannot reach the server. Please try again later.';
           } else {
-            this.apiError = error.message || 'Login failed. Please try again.';
+            this.apiError =
+              error.message || 'Login failed. Please try again.';
           }
         },
       });
   }
 }
-

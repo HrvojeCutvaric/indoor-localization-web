@@ -7,53 +7,52 @@
     <div class="login-card">
       <h2>Login</h2>
 
+      <div class="success-banner" *ngIf="successMessage">
+        {{ successMessage }}
+      </div>
+
       <form [formGroup]="form" (ngSubmit)="submit()">
-        <div class="form-group" [ngClass]="{ 'has-error': (f.email.touched || submitted) && f.email.invalid }">
-          <label for="email">Email</label>
-          <input
-            type="email"
-            id="email"
-            formControlName="email"
-            autocomplete="email"
-            [disabled]="isLoading"
-          />
-          <div class="error-text" *ngIf="(f.email.touched || submitted) && f.email.errors">
-            <span *ngIf="f.email.errors['required']">Email is required.</span>
-            <span *ngIf="f.email.errors['email']">Enter a valid email.</span>
+        <div class="form-group" [ngClass]="{
+            'has-error':
+              (f.username.touched || submitted) && f.username.invalid
+          }">
+          <label for="username">Username</label>
+          <input type="text" id="username" formControlName="username" autocomplete="username" [disabled]="isLoading" />
+          <div class="error-text" *ngIf="(f.username.touched || submitted) && f.username.errors">
+            <span *ngIf="f.username.errors['required']">
+              Username is required.
+            </span>
+            <span *ngIf="f.username.errors['minlength']">
+              Min 3 characters.
+            </span>
           </div>
         </div>
 
-
-        <div class="form-group" [ngClass]="{ 'has-error': (f.password.touched || submitted) && f.password.invalid }">
+        <div class="form-group" [ngClass]="{
+            'has-error':
+              (f.password.touched || submitted) && f.password.invalid
+          }">
           <label for="password">Password</label>
           <div class="password-wrapper">
-            <input
-              [type]="showPassword ? 'text' : 'password'"
-              id="password"
-              formControlName="password"
-              autocomplete="current-password"
-              [disabled]="isLoading"
-            />
-            <button
-              type="button"
-              class="toggle-btn"
-              (click)="togglePassword()"
-              [disabled]="isLoading"
-            >
+            <input [type]="showPassword ? 'text' : 'password'" id="password" formControlName="password"
+              autocomplete="current-password" [disabled]="isLoading" />
+            <button type="button" class="toggle-btn" (click)="togglePassword()" [disabled]="isLoading">
               👁️
             </button>
           </div>
           <div class="error-text" *ngIf="(f.password.touched || submitted) && f.password.errors">
-            <span *ngIf="f.password.errors['required']">Password is required.</span>
-            <span *ngIf="f.password.errors['minlength']">Min 6 characters.</span>
+            <span *ngIf="f.password.errors['required']">
+              Password is required.
+            </span>
+            <span *ngIf="f.password.errors['minlength']">
+              Min 6 characters.
+            </span>
           </div>
         </div>
-
 
         <div class="api-error" *ngIf="apiError">
           {{ apiError }}
         </div>
-
 
         <button type="submit" class="login-btn" [disabled]="form.invalid || isLoading">
           <span *ngIf="!isLoading">Login</span>

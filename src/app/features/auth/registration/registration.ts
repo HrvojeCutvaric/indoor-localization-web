@@ -7,8 +7,9 @@ import {
   ValidationErrors,
 } from '@angular/forms';
 import { NgClass } from '@angular/common';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../../../core/services/auth.service';
 
 function passwordMatch(group: AbstractControl): ValidationErrors | null {
   const a = group.get('password')?.value;
@@ -23,9 +24,10 @@ function passwordMatch(group: AbstractControl): ValidationErrors | null {
   templateUrl: './registration.html',
   styleUrls: ['./registration.scss'],
 })
+
 export class Registration {
   private fb = inject(FormBuilder);
-  private http = inject(HttpClient);
+  private authService = inject(AuthService);
   private router = inject(Router);
 
   isLoading = false;
@@ -38,22 +40,30 @@ export class Registration {
   form = this.fb.group(
     {
       email: ['', [Validators.required, Validators.email]],
-      username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(24)]],
-      firstName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(30)]],
-      lastName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(30)]],
+      username: [
+        '',
+        [Validators.required, Validators.minLength(3), Validators.maxLength(24)],
+      ],
+      firstName: [
+        '',
+        [Validators.required, Validators.minLength(2), Validators.maxLength(30)],
+      ],
+      lastName: [
+        '',
+        [Validators.required, Validators.minLength(2), Validators.maxLength(30)],
+      ],
       password: [
         '',
         [
           Validators.required,
-          // ≥8 chars, at least one letter & one number (adjust as needed)
           Validators.pattern(
-            /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d!@#$%^&*()_+\-={}[\]|:;"'<>,.?/]{8,}$/
+            /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d!@#$%^&*()_+\-={}[\]|:;"'<>,?/]{8,}$/,
           ),
         ],
       ],
       confirmPassword: ['', Validators.required],
     },
-    { validators: passwordMatch }
+    { validators: passwordMatch },
   );
 
   get f() {
@@ -63,6 +73,7 @@ export class Registration {
   togglePassword() {
     this.showPassword = !this.showPassword;
   }
+
   toggleConfirmPassword() {
     this.showConfirmPassword = !this.showConfirmPassword;
   }
@@ -81,17 +92,16 @@ export class Registration {
     const { email, username, firstName, lastName, password } = this.form.value;
 
     const payload = {
-      email,
-      username,
-      firstName,
-      lastName,
-      password,
+      email: email || null,
+      username: username || null,
+      firstName: firstName || null,
+      lastName: lastName || null,
+      password: password || null,
     };
 
-    this.http.post('/api/Auth/register', payload).subscribe({
+    this.authService.register(payload).subscribe({
       next: () => {
         this.isLoading = false;
-        // Success → redirect to login page
         this.router.navigate(['/login'], {
           queryParams: { registered: 'true' },
         });

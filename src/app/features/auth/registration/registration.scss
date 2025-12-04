@@ -4,7 +4,6 @@
     font-family: inherit;
     background: #0096e6;
 
-    /* Left: solid blue */
     .left-panel {
         flex: 1;
         background: #0096e6;
@@ -22,7 +21,6 @@
         }
     }
 
-    /* Right: white card with rounded left edge */
     .right-panel {
         flex: 1.5;
         display: flex;
@@ -74,13 +72,11 @@
             }
         }
 
-        /* Password fields with eye icon */
         .input-with-toggle {
             position: relative;
 
             input {
                 padding-right: 2.6rem;
-                /* room for the eye button */
             }
 
             .toggle {
@@ -110,7 +106,6 @@
             }
         }
 
-        /* Reserve space under each input so layout doesn't jump */
         .assist-row {
             min-height: 1rem;
             margin-top: 0.35rem;
@@ -163,7 +158,6 @@
         }
     }
 
-    /* Button & links */
     .register-btn {
         width: 100%;
         background: #0096e6;
@@ -204,7 +198,6 @@
         }
     }
 
-    /* ---------- Responsive ---------- */
     @media (max-width: 900px) {
         flex-direction: column;
         background: #fff;

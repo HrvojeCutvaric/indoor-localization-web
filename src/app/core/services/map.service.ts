@@ -20,7 +20,7 @@ export interface MapError {
 export class MapService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/maps`;
-  
+
   private mapsSubject = new BehaviorSubject<Map[]>([]);
   public maps$ = this.mapsSubject.asObservable();
 

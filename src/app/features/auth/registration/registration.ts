@@ -56,7 +56,6 @@ export class Registration {
         '',
         [
           Validators.required,
-          // ≥8 chars, at least one letter & one number (adjust as needed)
           Validators.pattern(
             /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d!@#$%^&*()_+\-={}[\]|:;"'<>,?/]{8,}$/,
           ),
@@ -103,7 +102,6 @@ export class Registration {
     this.authService.register(payload).subscribe({
       next: () => {
         this.isLoading = false;
-        // Success → redirect to login page
         this.router.navigate(['/login'], {
           queryParams: { registered: 'true' },
         });

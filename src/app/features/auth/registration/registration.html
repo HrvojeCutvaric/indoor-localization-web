@@ -8,7 +8,6 @@
             <h2>Create new account</h2>
 
             <form [formGroup]="form" (ngSubmit)="submit()">
-                <!-- Email -->
                 <div class="form-field" [ngClass]="{'has-error': (f.email.touched || submitted) && f.email.invalid}">
                     <label for="email">Email</label>
                     <input id="email" type="email" formControlName="email" autocomplete="email" />
@@ -20,7 +19,6 @@
                     </div>
                 </div>
 
-                <!-- Username -->
                 <div class="form-field"
                     [ngClass]="{'has-error': (f.username.touched || submitted) && f.username.invalid}">
                     <label for="username">Username</label>
@@ -34,7 +32,6 @@
                     </div>
                 </div>
 
-                <!-- First Name -->
                 <div class="form-field"
                     [ngClass]="{'has-error': (f.firstName.touched || submitted) && f.firstName.invalid}">
                     <label for="firstName">First Name</label>
@@ -48,7 +45,6 @@
                     </div>
                 </div>
 
-                <!-- Last Name -->
                 <div class="form-field"
                     [ngClass]="{'has-error': (f.lastName.touched || submitted) && f.lastName.invalid}">
                     <label for="lastName">Last Name</label>
@@ -62,7 +58,6 @@
                     </div>
                 </div>
 
-                <!-- Password -->
                 <div class="form-field"
                     [ngClass]="{'has-error': (f.password.touched || submitted) && f.password.invalid}">
                     <label for="password">Password</label>
@@ -88,7 +83,6 @@
                     </div>
                 </div>
 
-                <!-- Confirm Password -->
                 <div class="form-field" [ngClass]="{'has-error':
           ((f.confirmPassword.touched || submitted) && f.confirmPassword.invalid) ||
           (submitted && form.errors?.['passwordMismatch'])}">
@@ -117,14 +111,12 @@
                     </div>
                 </div>
 
-                <!-- API Error -->
                 @if (apiError) {
                 <div class="api-error">
                     {{ apiError }}
                 </div>
                 }
 
-                <!-- Submit button -->
                 <button class="register-btn" type="submit" [disabled]="form.invalid || isLoading">
                     @if (!isLoading) {
                     Register

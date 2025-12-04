@@ -7,13 +7,11 @@
     <div class="login-card">
       <h2>Login</h2>
 
-      <!-- Success poruka nakon registracije -->
       <div class="success-banner" *ngIf="successMessage">
         {{ successMessage }}
       </div>
 
       <form [formGroup]="form" (ngSubmit)="submit()">
-        <!-- Username Field -->
         <div class="form-group" [ngClass]="{
             'has-error':
               (f.username.touched || submitted) && f.username.invalid
@@ -30,7 +28,6 @@
           </div>
         </div>
 
-        <!-- Password Field -->
         <div class="form-group" [ngClass]="{
             'has-error':
               (f.password.touched || submitted) && f.password.invalid
@@ -53,12 +50,10 @@
           </div>
         </div>
 
-        <!-- API Error -->
         <div class="api-error" *ngIf="apiError">
           {{ apiError }}
         </div>
 
-        <!-- Submit Button -->
         <button type="submit" class="login-btn" [disabled]="form.invalid || isLoading">
           <span *ngIf="!isLoading">Login</span>
           <span *ngIf="isLoading" class="loading-spinner">

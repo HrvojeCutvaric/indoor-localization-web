@@ -14,7 +14,6 @@ import { AuthService } from '../../core/services/auth.service';
         <button (click)="logout()" class="logout-btn">Logout</button>
       </header>
 
-      <!-- Success login message (popup / oblacic) -->
       <div class="success-banner" *ngIf="successMessage">
         {{ successMessage }}
       </div>
@@ -71,7 +70,6 @@ import { AuthService } from '../../core/services/auth.service';
         }
       }
 
-      /* Pop up poruka za uspješan login */
       .success-banner {
         position: fixed;
         top: 1.5rem;
@@ -88,8 +86,6 @@ import { AuthService } from '../../core/services/auth.service';
         align-items: center;
         gap: 0.5rem;
         pointer-events: none;
-
-        /* Animation */
         opacity: 0;
         animation: fadeSlide 0.45s ease-out forwards;
       }
@@ -117,19 +113,16 @@ export class Dashboard {
   constructor(private authService: AuthService, private router: Router) {
     this.token = this.authService.getAccessToken();
 
-    // čitanje query parametra za uspješan login
     this.route.queryParamMap.subscribe((params) => {
       const login = params.get('login');
 
       if (login === 'success') {
         this.successMessage = 'Login successful. Welcome back!';
 
-        // auto-hide poruke nakon par sekundi
         setTimeout(() => {
           this.successMessage = null;
         }, 6000);
 
-        // makni param iz URL-a (poruka ostaje dok ne istekne timeout)
         this.router.navigate([], {
           relativeTo: this.route,
           queryParams: { login: null },

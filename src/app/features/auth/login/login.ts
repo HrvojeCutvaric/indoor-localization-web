@@ -37,13 +37,11 @@ export class Login implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // Ako je korisnik logiran, salje se na dashboard
     if (this.authService.isAuthenticated()) {
       this.router.navigate(['/dashboard']);
       return;
     }
 
-    // Poruka nakon uspješne registracije
     this.route.queryParamMap
       .pipe(takeUntil(this.destroy$))
       .subscribe((params) => {
@@ -52,12 +50,10 @@ export class Login implements OnInit, OnDestroy {
         if (registered === 'true') {
           this.successMessage = 'Registration successful. You can now log in.';
 
-          // auto-hide poruke nakon par sekundi
           setTimeout(() => {
             this.successMessage = null;
           }, 6000);
 
-          // makni query param iz URL-a da se poruka ne ponavlja na refresh
           this.router.navigate([], {
             relativeTo: this.route,
             queryParams: { registered: null },

@@ -9,7 +9,6 @@ interface RefreshResponse {
     refreshToken: string;
 }
 
-// struktura login responsa kakvu vraca backend
 export interface LoginResponse {
     accessToken: string;
     refreshToken: string;
@@ -18,13 +17,11 @@ export interface LoginResponse {
     email: string;
 }
 
-// tip za error koji koristi login komponenta
 export interface AuthError {
     message: string;
     code?: string | number;
 }
 
-// payload za registraciju
 export interface RegisterPayload {
     email: string | null;
     username: string | null;
@@ -44,7 +41,6 @@ export class AuthService {
     private readonly ACCESS_TOKEN_KEY = 'access_token';
     private readonly REFRESH_TOKEN_KEY = 'refresh_token';
 
-    // ---- Token storage helpers ----
     getAccessToken(): string | null {
         return localStorage.getItem(this.ACCESS_TOKEN_KEY);
     }
@@ -63,12 +59,10 @@ export class AuthService {
         localStorage.removeItem(this.REFRESH_TOKEN_KEY);
     }
 
-    // jednostavna provjera je li user prijavljen
     isAuthenticated(): boolean {
         return !!this.getAccessToken() && !!this.getRefreshToken();
     }
 
-    //login
     login(username: string, password: string): Observable<LoginResponse> {
         const url = `${environment.apiUrl}/Auth/login`;
 
@@ -91,7 +85,6 @@ export class AuthService {
         );
     }
 
-    // registracija
     register(payload: RegisterPayload): Observable<void> {
         const url = `${environment.apiUrl}/Auth/register`;
 
@@ -101,15 +94,6 @@ export class AuthService {
         );
     }
 
-    /**
-     * Calls backend refresh endpoint: POST /api/Auth/refresh
-     * Body:   { accessToken, refreshToken }
-     * Result: { accessToken, refreshToken }
-     *
-     * Returns:
-     *  - Observable<true>  if refresh succeeded and tokens were updated
-     *  - Observable<false> if refresh is not possible or failed
-     */
     refreshTokens(): Observable<boolean> {
         const accessToken = this.getAccessToken();
         const refreshToken = this.getRefreshToken();
@@ -131,14 +115,12 @@ export class AuthService {
             }),
             map(() => true),
             catchError(() => {
-                // Any error during refresh -> treat as failure and clear tokens
                 this.clearTokens();
                 return of(false);
             }),
         );
     }
 
-    // dodani dio za logout
     logout(): void {
         this.clearTokens();
         this.router.navigate(['/login']);
@@ -148,7 +130,6 @@ export class AuthService {
         this.logout();
     }
 
-    // Helper za poruke grešaka kod login-a
     private extractErrorMessage(error: HttpErrorResponse): string {
         if (error?.error?.message) {
             return error.error.message;

@@ -207,8 +207,6 @@
   align-items: center;
   gap: 0.5rem;
   pointer-events: none;
-
-  // početno stanje za animaciju
   opacity: 0;
   animation: fadeSlide 0.45s ease-out forwards;
 }

@@ -29,32 +29,62 @@ export class MapService {
   private loadingSubject = new BehaviorSubject<boolean>(false);
   public loading$ = this.loadingSubject.asObservable();
 
+  private selectedMapSubject = new BehaviorSubject<Map | null>(null);
+  public selectedMap$ = this.selectedMapSubject.asObservable();
+
   constructor() {
     this.loadMaps();
+    this.loadSelectedMapFromStorage();
+  }
+
+  private loadSelectedMapFromStorage(): void {
+    const stored = localStorage.getItem('selectedMap');
+    if (stored) {
+      try {
+        const map = JSON.parse(stored);
+        this.selectedMapSubject.next(map);
+      } catch (e) {
+        console.error('Failed to load selected map from storage', e);
+      }
+    }
   }
 
   loadMaps(): void {
     this.loadingSubject.next(true);
+    
+    const storedMaps = localStorage.getItem('maps');
+    if (storedMaps) {
+      try {
+        const maps = JSON.parse(storedMaps);
+        this.mapsSubject.next(maps);
+        this.loadingSubject.next(false);
+        return;
+      } catch (e) {
+        console.error('Failed to load maps from storage', e);
+      }
+    }
+
     const mockMaps: Map[] = [
       {
         id: '1',
         name: 'Ground Floor',
-        image: '/floormaps/ground-floor.png',
+        image: '/floormaps/demo-floormap.png',
       },
       {
         id: '2',
         name: 'First Floor',
-        image: '/floormaps/first-floor.png',
+        image: '/floormaps/demo-floormap.png',
       },
       {
         id: '3',
         name: 'Basement',
-        image: '/floormaps/basement.png',
+        image: '/floormaps/demo-floormap.png',
       },
     ];
 
     setTimeout(() => {
       this.mapsSubject.next(mockMaps);
+      this.saveMapsToStorage(mockMaps);
       this.loadingSubject.next(false);
     }, 500);
   }
@@ -90,7 +120,9 @@ export class MapService {
         };
 
         const currentMaps = this.mapsSubject.value;
-        this.mapsSubject.next([...currentMaps, mockMap]);
+        const updatedMaps = [...currentMaps, mockMap];
+        this.mapsSubject.next(updatedMaps);
+        this.saveMapsToStorage(updatedMaps);
         this.loadingSubject.next(false);
         observer.next(mockMap);
         observer.complete();
@@ -124,7 +156,9 @@ export class MapService {
             name: (formData.get('name') as string) || currentMaps[index].name,
             image,
           };
-          this.mapsSubject.next([...currentMaps]);
+          const updatedMaps = [...currentMaps];
+          this.mapsSubject.next(updatedMaps);
+          this.saveMapsToStorage(updatedMaps);
           this.loadingSubject.next(false);
           observer.next(currentMaps[index]);
           observer.complete();
@@ -146,6 +180,7 @@ export class MapService {
         }
         const filtered = currentMaps.filter(m => m.id !== id);
         this.mapsSubject.next(filtered);
+        this.saveMapsToStorage(filtered);
         this.loadingSubject.next(false);
         observer.next();
         observer.complete();
@@ -155,6 +190,23 @@ export class MapService {
 
   isLoading(): boolean {
     return this.loadingSubject.value;
+  }
+
+  setSelectedMap(map: Map): void {
+    this.selectedMapSubject.next(map);
+    localStorage.setItem('selectedMap', JSON.stringify(map));
+  }
+
+  getSelectedMap(): Map | null {
+    return this.selectedMapSubject.value;
+  }
+
+  private saveMapsToStorage(maps: Map[]): void {
+    try {
+      localStorage.setItem('maps', JSON.stringify(maps));
+    } catch (e) {
+      console.error('Failed to save maps to storage', e);
+    }
   }
 
   private revokeIfBlob(url?: string) {

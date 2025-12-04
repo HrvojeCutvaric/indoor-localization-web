@@ -17,7 +17,12 @@
       <p>Loading maps...</p>
     </div>
 
-    <app-map-list [maps]="maps" [loading]="loading" (delete)="onMapDeleted($event)"
-      (edit)="onMapEdited($event)"></app-map-list>
+    <app-map-list
+      [maps]="maps"
+      [loading]="loading"
+      (delete)="onMapDeleted($event)"
+      (edit)="onMapEdited($event)"
+      (view)="onMapViewed($event)"
+    ></app-map-list>
   </div>
 </div>

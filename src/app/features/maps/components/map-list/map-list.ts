@@ -14,6 +14,7 @@ export class MapList {
   @Input() loading = false;
   @Output() delete = new EventEmitter<string>();
   @Output() edit = new EventEmitter<string>();
+  @Output() view = new EventEmitter<string>();
 
   onDelete(id: string): void {
     this.delete.emit(id);
@@ -21,5 +22,9 @@ export class MapList {
 
   onEdit(id: string): void {
     this.edit.emit(id);
+  }
+
+  onView(id: string): void {
+    this.view.emit(id);
   }
 }

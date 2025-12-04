@@ -23,11 +23,11 @@ export interface AuthError {
 }
 
 export interface RegisterPayload {
-    email: string | null;
-    username: string | null;
-    firstName: string | null;
-    lastName: string | null;
-    password: string | null;
+    email: string;
+    username: string;
+    firstName: string;
+    lastName: string;
+    password: string;
 }
 
 @Injectable({

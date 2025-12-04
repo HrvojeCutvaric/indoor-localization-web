@@ -77,8 +77,7 @@
                     <div class="assist-row">
                         @if ((f.password.touched || submitted) && f.password.errors) {
                         @if (f.password.errors['required']) { <span class="error-text">Password is required.</span> }
-                        @if (f.password.errors['pattern']) { <span class="error-text">Min 8 chars, include a letter and
-                            a number.</span> }
+                        @if (f.password.errors['pattern']) { <span class="error-text">Min 8 chars, include uppercase, number, and special character.</span> }
                         }
                     </div>
                 </div>

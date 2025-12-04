@@ -41,11 +41,20 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
   private offsetX = 0;
   private offsetY = 0;
 
+  private minScale = 0.5;
+  private maxScale = 4;
+
   private floorWidthMeters = 40;
   private floorHeightMeters = 40;
 
   private pxPerMeterX = 1;
   private pxPerMeterY = 1;
+
+  private isDragging = false;
+  private lastDragX = 0;
+  private lastDragY = 0;
+  private lastTouchDistance = 0;
+  private isTouchPanning = false;
 
   @HostListener('window:resize')
   onResize() {
@@ -82,6 +91,19 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
   ngAfterViewInit(): void {
     this.initCanvas();
     this.loadImage();
+    this.setupCanvasListeners();
+  }
+
+  private setupCanvasListeners(): void {
+    const canvas = this.canvasRef.nativeElement;
+
+    canvas.addEventListener('wheel', (e) => this.onWheel(e), { passive: false });
+    canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
+    canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
+    canvas.addEventListener('mouseup', () => this.onMouseUp());
+    canvas.addEventListener('touchstart', (e) => this.onTouchStart(e), { passive: false });
+    canvas.addEventListener('touchmove', (e) => this.onTouchMove(e), { passive: false });
+    canvas.addEventListener('touchend', () => this.onTouchEnd());
   }
 
   private initCanvas(): void {
@@ -120,6 +142,8 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
     const scaleY = canvas.height / this.image.height;
     this.baseScale = Math.min(scaleX, scaleY);
     this.scale = this.baseScale;
+    this.minScale = this.baseScale * 0.5;
+    this.maxScale = this.baseScale * 4;
 
     this.offsetX = (canvas.width - this.image.width * this.scale) / 2;
     this.offsetY = (canvas.height - this.image.height * this.scale) / 2;
@@ -217,5 +241,108 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
 
   goToMaps(): void {
     this.router.navigate(['/maps']);
+  }
+
+  private onWheel(e: WheelEvent): void {
+    e.preventDefault();
+    const canvas = this.canvasRef.nativeElement;
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+    const newScale = Math.max(this.minScale, Math.min(this.maxScale, this.scale * zoomFactor));
+
+    this.offsetX = mouseX - (mouseX - this.offsetX) * (newScale / this.scale);
+    this.offsetY = mouseY - (mouseY - this.offsetY) * (newScale / this.scale);
+    this.scale = newScale;
+
+    this.draw();
+  }
+
+  private onMouseDown(e: MouseEvent): void {
+    this.isDragging = true;
+    this.lastDragX = e.clientX;
+    this.lastDragY = e.clientY;
+  }
+
+  private onMouseMove(e: MouseEvent): void {
+    if (!this.isDragging) return;
+
+    const deltaX = e.clientX - this.lastDragX;
+    const deltaY = e.clientY - this.lastDragY;
+
+    this.offsetX += deltaX;
+    this.offsetY += deltaY;
+    this.lastDragX = e.clientX;
+    this.lastDragY = e.clientY;
+
+    this.draw();
+  }
+
+  private onMouseUp(): void {
+    this.isDragging = false;
+  }
+
+  private onTouchStart(e: TouchEvent): void {
+    if (e.touches.length === 1) {
+      this.isTouchPanning = true;
+      this.lastDragX = e.touches[0].clientX;
+      this.lastDragY = e.touches[0].clientY;
+    } else if (e.touches.length === 2) {
+      this.isTouchPanning = false;
+      this.lastTouchDistance = this.getTouchDistance(e.touches[0], e.touches[1]);
+    }
+  }
+
+  private onTouchMove(e: TouchEvent): void {
+    e.preventDefault();
+
+    if (e.touches.length === 1 && this.isTouchPanning) {
+      const deltaX = e.touches[0].clientX - this.lastDragX;
+      const deltaY = e.touches[0].clientY - this.lastDragY;
+
+      this.offsetX += deltaX;
+      this.offsetY += deltaY;
+      this.lastDragX = e.touches[0].clientX;
+      this.lastDragY = e.touches[0].clientY;
+
+      this.draw();
+    } else if (e.touches.length === 2) {
+      const newDistance = this.getTouchDistance(e.touches[0], e.touches[1]);
+      const zoomFactor = newDistance / this.lastTouchDistance;
+      const newScale = Math.max(this.minScale, Math.min(this.maxScale, this.scale * zoomFactor));
+
+      const canvas = this.canvasRef.nativeElement;
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+
+      this.offsetX = centerX - (centerX - this.offsetX) * (newScale / this.scale);
+      this.offsetY = centerY - (centerY - this.offsetY) * (newScale / this.scale);
+      this.scale = newScale;
+
+      this.draw();
+      this.lastTouchDistance = newDistance;
+    }
+  }
+
+  private onTouchEnd(): void {
+    this.isTouchPanning = false;
+  }
+
+  private getTouchDistance(touch1: Touch, touch2: Touch): number {
+    const dx = touch1.clientX - touch2.clientX;
+    const dy = touch1.clientY - touch2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  zoomIn(): void {
+    this.scale = Math.min(this.maxScale, this.scale * 1.1);
+    this.draw();
+  }
+
+  zoomOut(): void {
+    this.scale = Math.max(this.minScale, this.scale / 1.1);
+    this.draw();
   }
 }

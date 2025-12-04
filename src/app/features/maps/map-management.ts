@@ -75,7 +75,7 @@ export class MapManagement implements OnInit, OnDestroy {
     const map = this.maps.find(m => m.id === id);
     if (map) {
       this.mapService.setSelectedMap(map);
-      this.router.navigate(['/map-canvas-demo']);
+      this.router.navigate(['/dashboard']);
     }
   }
 }

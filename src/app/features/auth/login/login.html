@@ -8,7 +8,6 @@
       <h2>Login</h2>
 
       <form [formGroup]="form" (ngSubmit)="submit()">
-        <!-- Email Field -->
         <div class="form-group" [ngClass]="{ 'has-error': (f.email.touched || submitted) && f.email.invalid }">
           <label for="email">Email</label>
           <input
@@ -24,7 +23,7 @@
           </div>
         </div>
 
-        <!-- Password Field -->
+
         <div class="form-group" [ngClass]="{ 'has-error': (f.password.touched || submitted) && f.password.invalid }">
           <label for="password">Password</label>
           <div class="password-wrapper">
@@ -50,12 +49,12 @@
           </div>
         </div>
 
-        <!-- API Error -->
+
         <div class="api-error" *ngIf="apiError">
           {{ apiError }}
         </div>
 
-        <!-- Submit Button -->
+
         <button type="submit" class="login-btn" [disabled]="form.invalid || isLoading">
           <span *ngIf="!isLoading">Login</span>
           <span *ngIf="isLoading" class="loading-spinner">

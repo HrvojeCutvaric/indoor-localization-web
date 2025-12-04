@@ -9,13 +9,10 @@ import {
 import { Observable, of, throwError } from 'rxjs';
 import { delay, switchMap } from 'rxjs/operators';
 
-/**
- * Mock interceptor for testing login without a backend
- * Remove this in production when real backend is available
- */
+
 @Injectable()
 export class MockAuthInterceptor implements HttpInterceptor {
-  // Mock users for testing
+
   private mockUsers = [
     { email: 'test@example.com', password: 'password123' },
     { email: 'demo@demo.com', password: 'demo1234' },
@@ -27,13 +24,13 @@ export class MockAuthInterceptor implements HttpInterceptor {
   ): Observable<HttpEvent<any>> {
     console.log('🔍 MockAuthInterceptor triggered - URL:', request.url);
 
-    // Only intercept login requests
+   
     if (request.url === '/api/login' && request.method === 'POST') {
       console.log('✅ Intercepting POST /api/login');
       const { email, password } = request.body;
       console.log('📧 Checking credentials:', email);
 
-      // Validate credentials
+    
       const user = this.mockUsers.find(
         (u) => u.email === email && u.password === password,
       );
@@ -63,7 +60,7 @@ export class MockAuthInterceptor implements HttpInterceptor {
         );
       } else {
         console.log('❌ Invalid credentials');
-        // Failed response
+
         return of(null).pipe(
           delay(1500),
           switchMap(() => {
@@ -80,7 +77,7 @@ export class MockAuthInterceptor implements HttpInterceptor {
       }
     }
 
-    // Pass other requests through
+  
     return next.handle(request);
   }
 }

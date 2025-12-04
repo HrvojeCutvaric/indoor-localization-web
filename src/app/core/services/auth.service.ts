@@ -35,7 +35,6 @@ export class AuthService {
 
   isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
 
-  // Mock users for development
   private mockUsers = [
     { email: 'test@example.com', password: 'password123' },
     { email: 'demo@demo.com', password: 'demo1234' },
@@ -48,22 +47,17 @@ export class AuthService {
     this.checkTokenValidity();
   }
 
-  /**
-   * Login user with email and password
-   * @param email User email
-   * @param password User password
-   * @returns Observable with login response
-   */
+
   login(email: string, password: string): Observable<LoginResponse> {
     const payload: LoginRequest = { email, password };
 
-    // In development, use mock authentication
+   
     if (!environment.production) {
       console.log('🔍 Development mode: Using mock authentication');
       return of(null).pipe(
-        delay(1500), // Simulate network delay
+        delay(1500), 
         switchMap(() => {
-          // Check credentials against mock users
+
           const user = this.mockUsers.find(
             (u) => u.email === email && u.password === password,
           );
@@ -103,7 +97,7 @@ export class AuthService {
       );
     }
 
-    // Production: call real backend
+ 
     return this.http.post<LoginResponse>(this.apiUrl, payload).pipe(
       tap((response) => {
         if (response.token) {
@@ -121,65 +115,46 @@ export class AuthService {
     );
   }
 
-  /**
-   * Logout user and clear token
-   */
+  
   logout(): void {
     this.clearToken();
     this.isAuthenticatedSubject.next(false);
     this.router.navigate(['/login']);
   }
 
-  /**
-   * Get stored JWT token
-   */
+
   getToken(): string | null {
     return localStorage.getItem(this.tokenKey);
   }
 
-  /**
-   * Check if user is authenticated
-   */
   isAuthenticated(): boolean {
     return this.hasToken();
   }
 
-  /**
-   * Store JWT token in localStorage
-   */
+
   private storeToken(token: string): void {
     localStorage.setItem(this.tokenKey, token);
   }
 
-  /**
-   * Clear stored token
-   */
+
   private clearToken(): void {
     localStorage.removeItem(this.tokenKey);
   }
 
-  /**
-   * Check if token exists
-   */
   private hasToken(): boolean {
     return !!localStorage.getItem(this.tokenKey);
   }
 
-  /**
-   * Validate token on service initialization
-   * Can be extended to check token expiry
-   */
+
   private checkTokenValidity(): void {
     const token = this.getToken();
     if (token) {
-      // Future: Add token validation/refresh logic here
+
       this.isAuthenticatedSubject.next(true);
     }
   }
 
-  /**
-   * Extract error message from HTTP error response
-   */
+
   private extractErrorMessage(error: any): string {
     if (error?.error?.message) {
       return error.error.message;

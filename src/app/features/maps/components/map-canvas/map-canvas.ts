@@ -4,8 +4,16 @@ import {
   ElementRef,
   ViewChild,
   HostListener,
+  inject,
+  OnInit,
+  ChangeDetectorRef,
+  OnDestroy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import { MapService } from '../../../../core/services/map.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-map-canvas',
@@ -15,13 +23,18 @@ import { CommonModule } from '@angular/common';
   styleUrls: ['./map-canvas.scss'],
 })
 
-export class MapCanvasComponent implements AfterViewInit {
+export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('mapCanvas', { static: true })
   canvasRef!: ElementRef<HTMLCanvasElement>;
 
   private ctx!: CanvasRenderingContext2D;
+  private router = inject(Router);
+  private mapService = inject(MapService);
+  private cdr = inject(ChangeDetectorRef);
+  private destroy$ = new Subject<void>();
   private image!: HTMLImageElement;
   private imageLoaded = false;
+  private mapImagePath: string = '/floormaps/demo-floormap.png';
 
   private scale = 1;
   private baseScale = 1;
@@ -40,6 +53,30 @@ export class MapCanvasComponent implements AfterViewInit {
     this.initCanvas();
     this.setupScaleAndOffset();
     this.draw();
+  }
+
+  ngOnInit(): void {
+    const selectedMap = this.mapService.getSelectedMap();
+    if (selectedMap && selectedMap.image) {
+      this.mapImagePath = selectedMap.image;
+    }
+
+    this.mapService.selectedMap$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((map) => {
+        if (map && map.image && this.mapImagePath !== map.image) {
+          this.mapImagePath = map.image;
+          this.imageLoaded = false;
+          if (this.ctx) {
+            this.loadImage();
+          }
+        }
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   ngAfterViewInit(): void {
@@ -63,7 +100,7 @@ export class MapCanvasComponent implements AfterViewInit {
 
   private loadImage(): void {
     const img = new Image();
-    img.src = '/floormaps/demo-floormap.png';
+    img.src = this.mapImagePath;
     img.onload = () => {
       this.image = img;
       this.imageLoaded = true;
@@ -86,6 +123,17 @@ export class MapCanvasComponent implements AfterViewInit {
 
     this.offsetX = (canvas.width - this.image.width * this.scale) / 2;
     this.offsetY = (canvas.height - this.image.height * this.scale) / 2;
+
+    const aspectRatio = this.image.width / this.image.height;
+    const baseMeters = 40;
+    
+    if (aspectRatio >= 1) {
+      this.floorWidthMeters = baseMeters;
+      this.floorHeightMeters = baseMeters / aspectRatio;
+    } else {
+      this.floorHeightMeters = baseMeters;
+      this.floorWidthMeters = baseMeters * aspectRatio;
+    }
 
     this.pxPerMeterX = this.image.width / this.floorWidthMeters;
     this.pxPerMeterY = this.image.height / this.floorHeightMeters;
@@ -164,7 +212,10 @@ export class MapCanvasComponent implements AfterViewInit {
 
       ctx.fillText(m.toString(), yAxisX + 10 / this.scale, y + 4 / this.scale);
     }
-
     ctx.restore();
+  }
+
+  goToMaps(): void {
+    this.router.navigate(['/maps']);
   }
 }

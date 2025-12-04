@@ -10,7 +10,7 @@
     </button>
   </div>
 
-  <!-- Upload Form Section -->
+
   <div class="upload-section" *ngIf="showUploadForm">
     <app-map-upload-form
       [mapId]="selectedMapId"
@@ -19,7 +19,7 @@
     ></app-map-upload-form>
   </div>
 
-  <!-- Maps List Section -->
+
   <div class="maps-section">
     <div class="loading-spinner" *ngIf="loading">
       <span class="spinner"></span>
@@ -31,6 +31,7 @@
       [loading]="loading"
       (delete)="onMapDeleted($event)"
       (edit)="onMapEdited($event)"
+      (view)="onMapViewed($event)"
     ></app-map-list>
   </div>
 </div>

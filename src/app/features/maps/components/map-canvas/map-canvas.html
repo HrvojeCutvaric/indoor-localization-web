@@ -2,12 +2,15 @@
     <div class="map-card">
         <header class="map-card__header">
             <div class="header-content">
-                <h2 class="map-card__title">Floormap preview (canvas)</h2>
-                <p class="map-card__subtitle">
-                    Demo prikaz za SCRUM-25 – rendering mape + koordinatni sustav.
-                </p>
+                <h2 class="map-card__title">Floormap</h2>
             </div>
-            <button class="btn-go-to-maps" (click)="goToMaps()" title="Go to Maps">📋 Go to Maps</button>
+            <div class="header-actions">
+                <div class="zoom-controls">
+                    <button class="zoom-btn" (click)="zoomOut()" title="Zoom Out">−</button>
+                    <button class="zoom-btn" (click)="zoomIn()" title="Zoom In">+</button>
+                </div>
+                <button class="btn-go-to-maps" (click)="goToMaps()" title="Go to Maps">📋 Go to Maps</button>
+            </div>
         </header>
 
         <div class="map-card__content">

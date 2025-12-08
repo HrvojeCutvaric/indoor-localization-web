@@ -3,13 +3,14 @@ import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { MapCanvasComponent } from '../maps/components/map-canvas/map-canvas';
+import { AssetsPage } from '../assets/assets-page/assets-page';
 
 type DashboardSection = 'maps' | 'assets' | 'zones' | 'reports';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, MapCanvasComponent],
+  imports: [CommonModule, MapCanvasComponent, AssetsPage],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.scss'],
 })

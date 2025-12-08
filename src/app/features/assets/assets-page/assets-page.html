@@ -1,0 +1,118 @@
+<div class="assets-page-root">
+    <div class="assets-messages">
+        <div *ngIf="successMessage" class="message message-success">
+            {{ successMessage }}
+        </div>
+        <div *ngIf="errorMessage" class="message message-error">
+            {{ errorMessage }}
+        </div>
+    </div>
+
+    <div class="assets-layout">
+        <section class="assets-create">
+            <h3>Create new asset</h3>
+
+            <form [formGroup]="createForm" (ngSubmit)="onCreate()">
+                <div class="form-field">
+                    <label for="name">Name</label>
+                    <input id="name" type="text" formControlName="name" />
+                </div>
+
+                <div class="form-row">
+                    <div class="form-field">
+                        <label for="x">X</label>
+                        <input id="x" type="number" formControlName="x" />
+                    </div>
+                    <div class="form-field">
+                        <label for="y">Y</label>
+                        <input id="y" type="number" formControlName="y" />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-field">
+                        <label for="floorMapId">Floor map ID</label>
+                        <input id="floorMapId" type="number" formControlName="floorMapId" />
+                    </div>
+
+                    <div class="form-field checkbox-field">
+                        <label>
+                            <input type="checkbox" formControlName="active" />
+                            Active
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label for="color">Color</label>
+                    <input id="color" type="text" formControlName="color" />
+                </div>
+
+                <button type="submit">Create asset</button>
+            </form>
+        </section>
+
+        <section class="assets-list">
+            <h3>Existing assets</h3>
+
+            <div *ngIf="isLoading">Loading assets…</div>
+
+            <table *ngIf="!isLoading && assets.length > 0">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>X</th>
+                        <th>Y</th>
+                        <th>Floor map ID</th>
+                        <th>Active</th>
+                        <th>Color</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let asset of assets">
+                        <td>{{ asset.id }}</td>
+                        <td>{{ asset.name }}</td>
+                        <td>{{ asset.x }}</td>
+                        <td>{{ asset.y }}</td>
+                        <td>{{ asset.floorMapId }}</td>
+                        <td>{{ asset.active }}</td>
+                        <td>{{ asset.color }}</td>
+                        <td class="actions">
+                            <button type="button" (click)="startEdit(asset)">Edit</button>
+                            <button type="button" (click)="deleteAsset(asset)">
+                                Delete
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p *ngIf="!isLoading && assets.length === 0">
+                No assets found.
+            </p>
+        </section>
+    </div>
+
+    <section *ngIf="editingAssetId !== null && editForm" class="assets-edit">
+        <h3>Edit asset</h3>
+
+        <form [formGroup]="editForm" (ngSubmit)="onUpdate()">
+            <div class="form-field">
+                <label for="edit-name">Name</label>
+                <input id="edit-name" type="text" formControlName="name" />
+            </div>
+
+            <div class="form-field">
+                <label for="edit-color">Color</label>
+                <input id="edit-color" type="text" formControlName="color" />
+            </div>
+
+            <div class="edit-actions">
+                <button type="submit">Save changes</button>
+                <button type="button" (click)="cancelEdit()">Cancel</button>
+            </div>
+        </form>
+    </section>
+</div>

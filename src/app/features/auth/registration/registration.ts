@@ -57,7 +57,7 @@ export class Registration {
         [
           Validators.required,
           Validators.pattern(
-            /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d!@#$%^&*()_+\-={}[\]|:;"'<>,?/]{8,}$/,
+            /^(?=.*[A-Z])(?=.*\d)(?=.*[^\w\d\s]).{8,}$/,
           ),
         ],
       ],
@@ -92,11 +92,11 @@ export class Registration {
     const { email, username, firstName, lastName, password } = this.form.value;
 
     const payload = {
-      email: email || null,
-      username: username || null,
-      firstName: firstName || null,
-      lastName: lastName || null,
-      password: password || null,
+      email: email || '',
+      username: username || '',
+      firstName: firstName || '',
+      lastName: lastName || '',
+      password: password || '',
     };
 
     this.authService.register(payload).subscribe({

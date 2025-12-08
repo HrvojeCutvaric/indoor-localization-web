@@ -1,6 +1,6 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { type Map } from '../../../../core/services/map.service';
+import { MapService, type Map } from '../../../../core/services/map.service';
 
 @Component({
   selector: 'app-map-list',
@@ -10,6 +10,8 @@ import { type Map } from '../../../../core/services/map.service';
   styleUrl: './map-list.scss',
 })
 export class MapList {
+  private mapService = inject(MapService);
+
   @Input() maps: Map[] = [];
   @Input() loading = false;
   @Output() delete = new EventEmitter<string>();
@@ -26,5 +28,10 @@ export class MapList {
 
   onView(id: string): void {
     this.view.emit(id);
+  }
+
+
+  getImageUrl(image: string | undefined): string {
+    return this.mapService.getFullImageUrl(image);
   }
 }

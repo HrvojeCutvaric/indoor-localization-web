@@ -1,12 +1,29 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { BehaviorSubject, Observable, throwError } from 'rxjs';
+import { map, tap, catchError, finalize } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
+
+
+export interface FloorMapResponse {
+  id: number;
+  name: string;
+  imageUrl: string | null;
+  imageWidthPx: number | null;
+  imageHeightPx: number | null;
+  widthInMeters: number;
+  heightInMeters: number;
+}
+
 
 export interface Map {
   id: string;
   name: string;
   image?: string;
+  imageWidthPx?: number;
+  imageHeightPx?: number;
+  widthInMeters?: number;
+  heightInMeters?: number;
 }
 
 export interface MapError {
@@ -14,17 +31,34 @@ export interface MapError {
   code: string;
 }
 
+
+export interface FloorMapCreateRequest {
+  name: string;
+  imageFile?: File;
+  imageWidthPx?: number;
+  imageHeightPx?: number;
+  widthInMeters: number;
+  heightInMeters: number;
+}
+
+export interface FloorMapUpdateRequest {
+  name?: string;
+  imageFile?: File;
+  imageWidthPx?: number;
+  imageHeightPx?: number;
+  widthInMeters?: number;
+  heightInMeters?: number;
+}
+
 @Injectable({
   providedIn: 'root',
 })
 export class MapService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/maps`;
+  private apiUrl = `${environment.apiUrl}/FloorMaps`;
 
   private mapsSubject = new BehaviorSubject<Map[]>([]);
   public maps$ = this.mapsSubject.asObservable();
-
-  private blobUrls = new Set<string>();
 
   private loadingSubject = new BehaviorSubject<boolean>(false);
   public loading$ = this.loadingSubject.asObservable();
@@ -34,59 +68,60 @@ export class MapService {
 
   constructor() {
     this.loadMaps();
-    this.loadSelectedMapFromStorage();
   }
 
-  private loadSelectedMapFromStorage(): void {
-    const stored = localStorage.getItem('selectedMap');
-    if (stored) {
-      try {
-        const map = JSON.parse(stored);
-        this.selectedMapSubject.next(map);
-      } catch (e) {
-        console.error('Failed to load selected map from storage', e);
-      }
-    }
+  private mapResponseToMap(response: FloorMapResponse): Map {
+    return {
+      id: response.id.toString(),
+      name: response.name,
+      image: response.imageUrl || undefined,
+      imageWidthPx: response.imageWidthPx || undefined,
+      imageHeightPx: response.imageHeightPx || undefined,
+      widthInMeters: response.widthInMeters,
+      heightInMeters: response.heightInMeters,
+    };
   }
+
+
+  private handleError(error: HttpErrorResponse): Observable<never> {
+    let errorMessage = 'An unknown error occurred';
+    
+    if (error.error instanceof ErrorEvent) {
+
+      errorMessage = error.error.message;
+    } else {
+   
+      errorMessage = error.error?.message || `Error Code: ${error.status}`;
+    }
+    
+    console.error('MapService error:', errorMessage);
+    return throwError(() => ({ message: errorMessage, code: error.status.toString() } as MapError));
+  }
+
 
   loadMaps(): void {
     this.loadingSubject.next(true);
     
-    const storedMaps = localStorage.getItem('maps');
-    if (storedMaps) {
-      try {
-        const maps = JSON.parse(storedMaps);
-        this.mapsSubject.next(maps);
-        this.loadingSubject.next(false);
-        return;
-      } catch (e) {
-        console.error('Failed to load maps from storage', e);
-      }
-    }
-
-    const mockMaps: Map[] = [
-      {
-        id: '1',
-        name: 'Ground Floor',
-        image: '/floormaps/demo-floormap.png',
-      },
-      {
-        id: '2',
-        name: 'First Floor',
-        image: '/floormaps/demo-floormap.png',
-      },
-      {
-        id: '3',
-        name: 'Basement',
-        image: '/floormaps/demo-floormap.png',
-      },
-    ];
-
-    setTimeout(() => {
-      this.mapsSubject.next(mockMaps);
-      this.saveMapsToStorage(mockMaps);
-      this.loadingSubject.next(false);
-    }, 500);
+    this.http.get<FloorMapResponse[]>(this.apiUrl)
+      .pipe(
+        map(responses => responses.map(r => this.mapResponseToMap(r))),
+        catchError(error => {
+          console.error('Failed to load maps from backend:', error);
+          return throwError(() => error);
+        }),
+        finalize(() => this.loadingSubject.next(false))
+      )
+      .subscribe({
+        next: (maps) => {
+          this.mapsSubject.next(maps);
+        },
+        error: (err) => {
+          console.error('Error loading maps:', err);
+          if (this.mapsSubject.value.length === 0) {
+            this.mapsSubject.next([]);
+          }
+        }
+      });
   }
 
   getMaps(): Observable<Map[]> {
@@ -94,98 +129,91 @@ export class MapService {
   }
 
   getMapById(id: string): Observable<Map> {
-    return this.http.get<Map>(`${this.apiUrl}/${id}`);
+    return this.http.get<FloorMapResponse>(`${this.apiUrl}/${id}`)
+      .pipe(
+        map(response => this.mapResponseToMap(response)),
+        catchError(this.handleError)
+      );
   }
+
 
   createMap(formData: FormData): Observable<Map> {
     this.loadingSubject.next(true);
-    return new Observable((observer) => {
-      setTimeout(() => {
-        const fileEntry = formData.get('image');
-        let imageUrl = '/floormaps/new-map.png';
-        if (fileEntry && typeof (fileEntry as any).name === 'string') {
-          try {
-            const file = fileEntry as File;
-            imageUrl = URL.createObjectURL(file);
-            this.blobUrls.add(imageUrl);
-          } catch (e) {
-            imageUrl = '/floormaps/new-map.png';
-          }
-        }
-
-        const mockMap: Map = {
-          id: Date.now().toString(),
-          name: (formData.get('name') as string) || 'Untitled Map',
-          image: imageUrl,
-        };
-
-        const currentMaps = this.mapsSubject.value;
-        const updatedMaps = [...currentMaps, mockMap];
-        this.mapsSubject.next(updatedMaps);
-        this.saveMapsToStorage(updatedMaps);
-        this.loadingSubject.next(false);
-        observer.next(mockMap);
-        observer.complete();
-      }, 1000);
-    });
+    
+   
+    if (!formData.has('widthInMeters')) {
+      formData.append('widthInMeters', '40'); 
+    }
+    if (!formData.has('heightInMeters')) {
+      formData.append('heightInMeters', '40'); 
+    }
+    
+   
+    const imageFile = formData.get('image');
+    if (imageFile && imageFile instanceof File) {
+      formData.delete('image');
+      formData.append('imageFile', imageFile);
+    }
+    
+    return this.http.post<FloorMapResponse>(this.apiUrl, formData)
+      .pipe(
+        map(response => this.mapResponseToMap(response)),
+        tap(newMap => {
+          const currentMaps = this.mapsSubject.value;
+          this.mapsSubject.next([...currentMaps, newMap]);
+        }),
+        catchError(this.handleError),
+        finalize(() => this.loadingSubject.next(false))
+      );
   }
+
 
   updateMap(id: string, formData: FormData): Observable<Map> {
     this.loadingSubject.next(true);
-    return new Observable((observer) => {
-      setTimeout(() => {
-        const currentMaps = this.mapsSubject.value;
-        const index = currentMaps.findIndex(m => m.id === id);
-        if (index !== -1) {
-          const fileEntry = formData.get('image');
-          let image = currentMaps[index].image;
-          if (fileEntry && typeof (fileEntry as any).name === 'string') {
-            try {
-              if (image && image.startsWith('blob:')) {
-                this.revokeIfBlob(image);
-              }
-              const file = fileEntry as File;
-              image = URL.createObjectURL(file);
-              this.blobUrls.add(image);
-            } catch (e) {
-            }
-          }
+    
 
-          currentMaps[index] = {
-            ...currentMaps[index],
-            name: (formData.get('name') as string) || currentMaps[index].name,
-            image,
-          };
-          const updatedMaps = [...currentMaps];
-          this.mapsSubject.next(updatedMaps);
-          this.saveMapsToStorage(updatedMaps);
-          this.loadingSubject.next(false);
-          observer.next(currentMaps[index]);
-          observer.complete();
-        } else {
-          observer.error({ message: 'Map not found', code: '404' });
-        }
-      }, 800);
-    });
+    const imageFile = formData.get('image');
+    if (imageFile && imageFile instanceof File) {
+      formData.delete('image');
+      formData.append('imageFile', imageFile);
+    }
+    
+    return this.http.put<FloorMapResponse>(`${this.apiUrl}/${id}`, formData)
+      .pipe(
+        map(response => this.mapResponseToMap(response)),
+        tap(updatedMap => {
+          const currentMaps = this.mapsSubject.value;
+          const index = currentMaps.findIndex(m => m.id === id);
+          if (index !== -1) {
+            currentMaps[index] = updatedMap;
+            this.mapsSubject.next([...currentMaps]);
+          }
+        }),
+        catchError(this.handleError),
+        finalize(() => this.loadingSubject.next(false))
+      );
   }
+
 
   deleteMap(id: string): Observable<void> {
     this.loadingSubject.next(true);
-    return new Observable((observer) => {
-      setTimeout(() => {
-        const currentMaps = this.mapsSubject.value;
-        const mapToDelete = currentMaps.find(m => m.id === id);
-        if (mapToDelete && mapToDelete.image && mapToDelete.image.startsWith('blob:')) {
-          this.revokeIfBlob(mapToDelete.image);
-        }
-        const filtered = currentMaps.filter(m => m.id !== id);
-        this.mapsSubject.next(filtered);
-        this.saveMapsToStorage(filtered);
-        this.loadingSubject.next(false);
-        observer.next();
-        observer.complete();
-      }, 500);
-    });
+    
+    return this.http.delete<{ message: string }>(`${this.apiUrl}/${id}`)
+      .pipe(
+        map(() => void 0),
+        tap(() => {
+          const currentMaps = this.mapsSubject.value;
+          const filtered = currentMaps.filter(m => m.id !== id);
+          this.mapsSubject.next(filtered);
+          
+
+          if (this.selectedMapSubject.value?.id === id) {
+            this.selectedMapSubject.next(null);
+          }
+        }),
+        catchError(this.handleError),
+        finalize(() => this.loadingSubject.next(false))
+      );
   }
 
   isLoading(): boolean {
@@ -194,29 +222,30 @@ export class MapService {
 
   setSelectedMap(map: Map): void {
     this.selectedMapSubject.next(map);
-    localStorage.setItem('selectedMap', JSON.stringify(map));
   }
 
   getSelectedMap(): Map | null {
     return this.selectedMapSubject.value;
   }
 
-  private saveMapsToStorage(maps: Map[]): void {
-    try {
-      localStorage.setItem('maps', JSON.stringify(maps));
-    } catch (e) {
-      console.error('Failed to save maps to storage', e);
+  getFullImageUrl(imageUrl: string | undefined): string {
+    if (!imageUrl) {
+      return '/floormaps/demo-floormap.png'; 
     }
-  }
+    
 
-  private revokeIfBlob(url?: string) {
-    if (!url) return;
-    try {
-      if (this.blobUrls.has(url)) {
-        URL.revokeObjectURL(url);
-        this.blobUrls.delete(url);
-      }
-    } catch (e) {
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return imageUrl;
     }
+    
+
+    if (imageUrl.startsWith('/images/')) {
+
+      const baseUrl = environment.apiUrl.replace('/api', '');
+      return `${baseUrl}${imageUrl}`;
+    }
+    
+
+    return imageUrl;
   }
 }

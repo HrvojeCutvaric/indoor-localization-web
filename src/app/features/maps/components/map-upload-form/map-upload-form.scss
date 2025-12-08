@@ -66,6 +66,27 @@
     margin-top: 0.4rem;
   }
 
+  .form-row {
+    display: flex;
+    gap: 1rem;
+
+    &.dimensions-row {
+      .form-group {
+        flex: 1;
+
+        input[type='number'] {
+          -moz-appearance: textfield;
+
+          &::-webkit-outer-spin-button,
+          &::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+          }
+        }
+      }
+    }
+  }
+
   .api-error {
     background-color: #fee;
     border: 1px solid #fcc;

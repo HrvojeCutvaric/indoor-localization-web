@@ -67,17 +67,32 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit(): void {
     const selectedMap = this.mapService.getSelectedMap();
     if (selectedMap && selectedMap.image) {
-      this.mapImagePath = selectedMap.image;
+      this.mapImagePath = this.mapService.getFullImageUrl(selectedMap.image);
+      if (selectedMap.widthInMeters) {
+        this.floorWidthMeters = selectedMap.widthInMeters;
+      }
+      if (selectedMap.heightInMeters) {
+        this.floorHeightMeters = selectedMap.heightInMeters;
+      }
     }
 
     this.mapService.selectedMap$
       .pipe(takeUntil(this.destroy$))
       .subscribe((map) => {
-        if (map && map.image && this.mapImagePath !== map.image) {
-          this.mapImagePath = map.image;
-          this.imageLoaded = false;
-          if (this.ctx) {
-            this.loadImage();
+        if (map && map.image) {
+          const newImagePath = this.mapService.getFullImageUrl(map.image);
+          if (this.mapImagePath !== newImagePath) {
+            this.mapImagePath = newImagePath;
+            if (map.widthInMeters) {
+              this.floorWidthMeters = map.widthInMeters;
+            }
+            if (map.heightInMeters) {
+              this.floorHeightMeters = map.heightInMeters;
+            }
+            this.imageLoaded = false;
+            if (this.ctx) {
+              this.loadImage();
+            }
           }
         }
       });
@@ -148,15 +163,21 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
     this.offsetX = (canvas.width - this.image.width * this.scale) / 2;
     this.offsetY = (canvas.height - this.image.height * this.scale) / 2;
 
-    const aspectRatio = this.image.width / this.image.height;
-    const baseMeters = 40;
-    
-    if (aspectRatio >= 1) {
-      this.floorWidthMeters = baseMeters;
-      this.floorHeightMeters = baseMeters / aspectRatio;
+    const selectedMap = this.mapService.getSelectedMap();
+    if (selectedMap?.widthInMeters && selectedMap?.heightInMeters) {
+      this.floorWidthMeters = selectedMap.widthInMeters;
+      this.floorHeightMeters = selectedMap.heightInMeters;
     } else {
-      this.floorHeightMeters = baseMeters;
-      this.floorWidthMeters = baseMeters * aspectRatio;
+      const aspectRatio = this.image.width / this.image.height;
+      const baseMeters = 40;
+      
+      if (aspectRatio >= 1) {
+        this.floorWidthMeters = baseMeters;
+        this.floorHeightMeters = baseMeters / aspectRatio;
+      } else {
+        this.floorHeightMeters = baseMeters;
+        this.floorWidthMeters = baseMeters * aspectRatio;
+      }
     }
 
     this.pxPerMeterX = this.image.width / this.floorWidthMeters;

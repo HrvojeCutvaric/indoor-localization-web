@@ -10,7 +10,7 @@
       @for (map of maps; track map.id) {
         <div class="map-card">
           <div class="map-image-wrapper">
-            <img [src]="map.image" [alt]="map.name" class="map-image" />
+            <img [src]="getImageUrl(map.image)" [alt]="map.name" class="map-image" />
             <div class="map-overlay">
               <button class="btn-icon view" (click)="onView(map.id)" title="View map">
                 👁️

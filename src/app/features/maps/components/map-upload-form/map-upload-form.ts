@@ -40,6 +40,8 @@ export class MapUploadForm implements OnInit, OnDestroy {
 
   form = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(3)]],
+    widthInMeters: [10, [Validators.required, Validators.min(1), Validators.max(1000)]],
+    heightInMeters: [10, [Validators.required, Validators.min(1), Validators.max(1000)]],
   });
 
   get f() {
@@ -56,8 +58,11 @@ export class MapUploadForm implements OnInit, OnDestroy {
           if (map) {
             this.form.patchValue({
               name: map.name,
+              widthInMeters: map.widthInMeters || 10,
+              heightInMeters: map.heightInMeters || 10,
             });
-            this.filePreview = map.image || null;
+            // Use getFullImageUrl to resolve backend image paths
+            this.filePreview = map.image ? this.mapService.getFullImageUrl(map.image) : null;
           }
         });
     }
@@ -112,6 +117,8 @@ export class MapUploadForm implements OnInit, OnDestroy {
     const formData = new FormData();
     formData.append('name', this.form.get('name')?.value || '');
     formData.append('image', this.selectedFile);
+    formData.append('widthInMeters', String(this.form.get('widthInMeters')?.value || 10));
+    formData.append('heightInMeters', String(this.form.get('heightInMeters')?.value || 10));
 
     const request = this.mapId
       ? this.mapService.updateMap(this.mapId, formData)

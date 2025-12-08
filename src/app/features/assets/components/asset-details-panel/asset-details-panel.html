@@ -1,0 +1,31 @@
+<div class="details-panel">
+  <h3>Asset details</h3>
+
+  <div class="details-content">
+    <div class="loading-state" *ngIf="loading">
+      <span class="spinner"></span>
+      <p>Loading...</p>
+    </div>
+
+    <div class="empty-state" *ngIf="!loading && !asset">
+      <p>Select an asset to view details</p>
+    </div>
+
+    <div class="asset-info" *ngIf="!loading && asset">
+      <div class="info-row">
+        <span class="label">Name:</span>
+        <span class="value">{{ asset.name }}</span>
+      </div>
+
+      <div class="info-row">
+        <span class="label">Description:</span>
+        <span class="value">{{ asset.description || '—' }}</span>
+      </div>
+
+      <div class="info-row">
+        <span class="label">Status:</span>
+        <span class="value">{{ asset.status || '—' }}</span>
+      </div>
+    </div>
+  </div>
+</div>

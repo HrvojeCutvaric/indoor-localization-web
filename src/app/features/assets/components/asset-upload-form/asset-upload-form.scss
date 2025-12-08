@@ -1,0 +1,135 @@
+.form-container {
+  h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 1.5rem 0;
+  }
+
+  .form-group {
+    margin-bottom: 1.25rem;
+
+    label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 0.4rem;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      padding: 0.7rem 0.8rem;
+      border: 1px solid #bdbdbd;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      outline: none;
+      transition: all 0.2s;
+
+      &:focus {
+        border-color: #0095db;
+        box-shadow: 0 0 0 3px rgba(0, 149, 219, 0.1);
+      }
+
+      &:disabled {
+        background-color: #f5f5f5;
+        cursor: not-allowed;
+        opacity: 0.7;
+      }
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    &.has-error {
+      input,
+      textarea {
+        border-color: #d32f2f;
+        background-color: #fff5f5;
+      }
+    }
+  }
+
+  .error-text {
+    display: block;
+    color: #d32f2f;
+    font-size: 0.85rem;
+    margin-top: 0.4rem;
+  }
+
+  .api-error {
+    background-color: #fee;
+    border: 1px solid #fcc;
+    border-radius: 6px;
+    padding: 0.8rem;
+    margin-bottom: 1rem;
+    color: #d32f2f;
+    font-size: 0.9rem;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-start;
+    margin-top: 1.5rem;
+
+    .btn {
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      &.btn-primary {
+        background: #0095db;
+        color: #fff;
+
+        &:hover:not(:disabled) {
+          background: #007bb8;
+        }
+      }
+
+      &.btn-secondary {
+        background: #f5f5f5;
+        color: #333;
+        border: 1px solid #ddd;
+
+        &:hover:not(:disabled) {
+          background: #eee;
+        }
+      }
+    }
+  }
+
+  .loading-spinner {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

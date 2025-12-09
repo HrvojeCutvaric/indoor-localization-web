@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { BehaviorSubject, Observable, throwError, of } from 'rxjs';
-import { map, tap, catchError, finalize } from 'rxjs/operators';
+import { map, tap, catchError, finalize, filter, take, switchMap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
 
@@ -66,10 +66,43 @@ export class MapService {
   private selectedMapSubject = new BehaviorSubject<Map | null>(null);
   public selectedMap$ = this.selectedMapSubject.asObservable();
 
+  private readonly SELECTED_MAP_KEY = 'selectedMapId';
+
   constructor() {
     this.loadMaps();
+    this.restoreSelectedMap();
   }
 
+  private restoreSelectedMap(): void {
+    const savedMapId = localStorage.getItem(this.SELECTED_MAP_KEY);
+    if (savedMapId) {
+      // Try to get the map from the loaded maps
+      this.maps$.pipe(
+        filter((mapList: Map[]) => mapList.length > 0),
+        take(1),
+        switchMap((mapList: Map[]) => {
+          const foundMap = mapList.find(m => m.id === savedMapId);
+          if (foundMap) {
+            return of(foundMap);
+          } else {
+            // If map not found in the list, fetch it directly from backend
+            return this.http.get<FloorMapResponse>(`${this.apiUrl}/${savedMapId}`).pipe(
+              map(response => this.mapResponseToMap(response)),
+              catchError(() => {
+                localStorage.removeItem(this.SELECTED_MAP_KEY);
+                return of(null);
+              })
+            );
+          }
+        }),
+        filter((result: Map | null) => result !== null)
+      ).subscribe((map: Map | null) => {
+        if (map) {
+          this.selectedMapSubject.next(map);
+        }
+      });
+    }
+  }
   private mapResponseToMap(response: FloorMapResponse): Map {
     return {
       id: response.id.toString(),
@@ -223,30 +256,48 @@ export class MapService {
 
   setSelectedMap(map: Map): void {
     this.selectedMapSubject.next(map);
+    localStorage.setItem(this.SELECTED_MAP_KEY, map.id.toString());
   }
 
   getSelectedMap(): Map | null {
     return this.selectedMapSubject.value;
   }
 
+  clearSelectedMap(): void {
+    this.selectedMapSubject.next(null);
+    localStorage.removeItem(this.SELECTED_MAP_KEY);
+  }
+
   getFullImageUrl(imageUrl: string | undefined): string {
     if (!imageUrl) {
+      console.log('No image URL provided, using demo');
       return '/floormaps/demo-floormap.png'; 
     }
     
+    console.log('Image URL from backend:', imageUrl);
 
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      console.log('Using absolute URL:', imageUrl);
       return imageUrl;
     }
     
 
     if (imageUrl.startsWith('/images/')) {
-
       const baseUrl = environment.apiUrl.replace('/api', '');
-      return `${baseUrl}${imageUrl}`;
+      const fullUrl = `${baseUrl}${imageUrl}`;
+      console.log('Constructed image URL:', fullUrl);
+      return fullUrl;
     }
     
+    // If it's a relative path without leading slash, prepend the base API URL
+    if (!imageUrl.startsWith('/')) {
+      const baseUrl = environment.apiUrl.replace('/api', '');
+      const fullUrl = `${baseUrl}/images/${imageUrl}`;
+      console.log('Constructed relative image URL:', fullUrl);
+      return fullUrl;
+    }
 
+    console.log('Returning image URL as-is:', imageUrl);
     return imageUrl;
   }
 }

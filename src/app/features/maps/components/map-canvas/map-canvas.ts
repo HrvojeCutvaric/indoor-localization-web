@@ -237,7 +237,7 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
     const imgW = this.image.width;
     const imgH = this.image.height;
 
-    const pad = 20 / this.scale;
+    const textPad = 5 / this.scale; /* padding for text only, axes start from corner */
 
     ctx.save();
     ctx.lineWidth = 1 / this.scale;
@@ -247,15 +247,16 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const step = 5;
 
-    const xAxisY = imgH - pad;
+    /* X-axis starts at the bottom-left corner (0, imgH) */
+    const xAxisY = imgH;
 
     ctx.beginPath();
-    ctx.moveTo(pad, xAxisY);
-    ctx.lineTo(imgW - pad, xAxisY);
+    ctx.moveTo(0, xAxisY);
+    ctx.lineTo(imgW, xAxisY);
     ctx.stroke();
 
     for (let m = step; m < this.floorWidthMeters; m += step) {
-      const x = pad + m * this.pxPerMeterX;
+      const x = m * this.pxPerMeterX;
 
       ctx.beginPath();
       ctx.moveTo(x, xAxisY);
@@ -265,15 +266,16 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
       ctx.fillText(m.toString(), x - 4 / this.scale, xAxisY + 14 / this.scale);
     }
 
-    const yAxisX = pad;
+    /* Y-axis starts at the bottom-left corner (0, imgH) and goes to top-left (0, 0) */
+    const yAxisX = 0;
 
     ctx.beginPath();
-    ctx.moveTo(yAxisX, imgH - pad);
-    ctx.lineTo(yAxisX, pad);
+    ctx.moveTo(yAxisX, imgH);
+    ctx.lineTo(yAxisX, 0);
     ctx.stroke();
 
     for (let m = step; m < this.floorHeightMeters; m += step) {
-      const y = imgH - pad - m * this.pxPerMeterY;
+      const y = imgH - m * this.pxPerMeterY;
 
       ctx.beginPath();
       ctx.moveTo(yAxisX, y);

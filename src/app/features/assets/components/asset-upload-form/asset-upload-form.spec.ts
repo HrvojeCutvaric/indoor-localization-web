@@ -3,6 +3,7 @@ import { AssetUploadForm } from './asset-upload-form';
 import { provideHttpClient } from '@angular/common/http';
 import { MapService, Map } from '../../../../core/services/map.service';
 import { of } from 'rxjs';
+import '@testing-library/jest-dom';
 
 describe('AssetUploadForm', () => {
   let component: AssetUploadForm;
@@ -62,7 +63,7 @@ describe('AssetUploadForm', () => {
   });
 
   it('should emit cancelled when cancel is clicked', () => {
-    jest.spyOn(component.cancelled, 'emit');
+    spyOn(component.cancelled, 'emit');
     
     component.onCancel();
     

@@ -44,13 +44,22 @@
 
       <div class="form-group">
         <label for="color">Color</label>
-        <input type="color" id="color" formControlName="color" [disabled]="isLoading" />
+
+        <div class="color-control">
+          <!-- visual swatch and hex value (native input will be overlayed invisibly on top of the swatch) -->
+          <div class="color-preview" [style.background]="form.get('color')?.value"></div>
+          <div class="color-hex">{{ form.get('color')?.value }}</div>
+
+          <!-- keep native color input for accessibility; overlay it over the preview and hide native UI -->
+          <input class="color-input" type="color" id="color" formControlName="color" [disabled]="isLoading" />
+        </div>
       </div>
     </div>
 
     <div class="form-group">
-      <label>
-        <input type="checkbox" formControlName="active" [disabled]="isLoading" /> Active
+      <label class="checkbox-label">
+        <span class="checkbox-text">Active</span>
+        <input type="checkbox" formControlName="active" [disabled]="isLoading" />
       </label>
     </div>
 

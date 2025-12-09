@@ -11,9 +11,11 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { MapService } from '../../../../core/services/map.service';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { MapService, Map } from '../../../../core/services/map.service';
+import { AssetService } from '../../../../features/assets/asset.service';
+import { Asset } from '../../../../features/assets/asset.model';
+import { Subject, interval, Subscription } from 'rxjs';
+import { takeUntil, switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-map-canvas',
@@ -32,6 +34,10 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
   private mapService = inject(MapService);
   private cdr = inject(ChangeDetectorRef);
   private destroy$ = new Subject<void>();
+  private assetService = inject(AssetService);
+  private assets: Asset[] = [];
+  private assetUpdateSubscription?: Subscription;
+  private readonly UPDATE_INTERVAL_MS = 2000; // Update every 2 seconds
   private image!: HTMLImageElement;
   imageLoaded = false;
   mapImagePath: string = '';
@@ -101,6 +107,13 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
           setTimeout(() => {
             this.loadImageIfCanvasReady();
           }, 0);
+          
+          // Start live asset updates for this floor map
+          this.startAssetUpdates();
+        } else {
+          // No map selected, stop asset updates
+          this.stopAssetUpdates();
+          this.assets = [];
         }
       });
   }
@@ -115,7 +128,37 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  private startAssetUpdates(): void {
+    this.stopAssetUpdates(); // Clean up any existing subscription
+    
+    const selectedMap = this.mapService.getSelectedMap();
+    if (!selectedMap) return;
+
+    this.assetUpdateSubscription = interval(this.UPDATE_INTERVAL_MS)
+      .pipe(
+        takeUntil(this.destroy$),
+        switchMap(() => this.assetService.getAssetsByFloorMap(Number(selectedMap.id)))
+      )
+      .subscribe({
+        next: (assets) => {
+          this.assets = assets.filter(asset => asset.active); // Only show active assets
+          this.draw(); // Redraw canvas with updated assets
+        },
+        error: (err) => {
+          console.error('Failed to fetch assets for live updates:', err);
+        }
+      });
+  }
+
+  private stopAssetUpdates(): void {
+    if (this.assetUpdateSubscription) {
+      this.assetUpdateSubscription.unsubscribe();
+      this.assetUpdateSubscription = undefined;
+    }
+  }
+
   ngOnDestroy(): void {
+    this.stopAssetUpdates();
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -230,6 +273,7 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
     ctx.drawImage(this.image, 0, 0);
 
     this.drawCoordinateSystem();
+    this.drawAssets();
   }
 
   private drawCoordinateSystem(): void {
@@ -284,6 +328,43 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
 
       ctx.fillText(m.toString(), yAxisX + 10 / this.scale, y + 4 / this.scale);
     }
+    ctx.restore();
+  }
+
+  private drawAssets(): void {
+    if (!this.assets.length) return;
+
+    const ctx = this.ctx;
+    ctx.save();
+
+    // Draw each asset as a colored circle with label
+    this.assets.forEach(asset => {
+      if (asset.x !== null && asset.x !== undefined && 
+          asset.y !== null && asset.y !== undefined) {
+        
+        // Convert meters to pixels
+        const pixelX = asset.x * this.pxPerMeterX;
+        const pixelY = this.image.height - (asset.y * this.pxPerMeterY); // Flip Y coordinate
+        
+        // Draw asset circle
+        ctx.beginPath();
+        ctx.arc(pixelX, pixelY, 8 / this.scale, 0, 2 * Math.PI);
+        ctx.fillStyle = asset.color || '#FF0000';
+        ctx.fill();
+        
+        // Draw border
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 2 / this.scale;
+        ctx.stroke();
+        
+        // Draw asset name
+        ctx.fillStyle = '#000000';
+        ctx.font = `${12 / this.scale}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.fillText(asset.name, pixelX, pixelY - 12 / this.scale);
+      }
+    });
+
     ctx.restore();
   }
 

@@ -23,6 +23,12 @@ export class AssetService {
       .pipe(catchError(error => this.handleError(error)));
   }
 
+  getAssetsByFloorMap(floorMapId: number): Observable<Asset[]> {
+    return this.http
+      .get<Asset[]>(`${this.baseUrl}/floormap/${floorMapId}`)
+      .pipe(catchError(error => this.handleError(error)));
+  }
+
   getAssetById(id: number): Observable<Asset> {
     return this.http
       .get<Asset>(`${this.baseUrl}/${id}`)

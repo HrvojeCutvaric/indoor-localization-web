@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { BehaviorSubject, Observable, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, throwError, of } from 'rxjs';
 import { map, tap, catchError, finalize } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
@@ -107,7 +107,8 @@ export class MapService {
         map(responses => responses.map(r => this.mapResponseToMap(r))),
         catchError(error => {
           console.error('Failed to load maps from backend:', error);
-          return throwError(() => error);
+          // Return empty array instead of demo data - user should upload real maps
+          return of([]);
         }),
         finalize(() => this.loadingSubject.next(false))
       )

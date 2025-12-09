@@ -1,0 +1,53 @@
+<div class="asset-management-container">
+  <!-- Left Sidebar -->
+  <app-asset-list-sidebar
+    [assets]="assets"
+    [selectedAsset]="selectedAsset"
+    [loading]="loading"
+    (assetSelected)="onAssetSelected($event)"
+    (addAsset)="onAddAsset()"
+    (editAsset)="onEditAsset()"
+    (deleteAsset)="onDeleteAsset()"
+  ></app-asset-list-sidebar>
+
+  <!-- Right Panel -->
+  <app-asset-details-panel
+    [asset]="selectedAsset"
+    [loading]="loading"
+  ></app-asset-details-panel>
+</div>
+
+<!-- Create/Edit Form Modal -->
+<div class="modal-overlay" *ngIf="showForm" (click)="onFormCancelled()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <app-asset-upload-form
+      [mode]="formMode"
+      [asset]="editingAsset"
+      (submitted)="onFormSubmitted($event)"
+      (cancelled)="onFormCancelled()"
+    ></app-asset-upload-form>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" *ngIf="showDeleteConfirm" (click)="cancelDelete()">
+  <div class="modal-content delete-confirm" (click)="$event.stopPropagation()">
+    <h3>Delete Asset</h3>
+    <p>Are you sure you want to delete <strong>{{ assetToDelete?.name }}</strong>?</p>
+    <p class="warning">This action cannot be undone.</p>
+    
+    <div class="error-message" *ngIf="deleteError">{{ deleteError }}</div>
+    
+    <div class="modal-actions">
+      <button class="btn btn-secondary" (click)="cancelDelete()" [disabled]="deleteLoading">
+        Cancel
+      </button>
+      <button class="btn btn-danger" (click)="confirmDelete()" [disabled]="deleteLoading">
+        <span *ngIf="!deleteLoading">Delete</span>
+        <span *ngIf="deleteLoading" class="loading-spinner">
+          <span class="spinner"></span> Deleting...
+        </span>
+      </button>
+    </div>
+  </div>
+</div>

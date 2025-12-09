@@ -71,7 +71,8 @@
 
 .dashboard-content {
     padding: 2rem;
-    max-width: 1200px;
+    /* allow larger layouts so map canvas can expand */
+    max-width: 1600px;
     margin: 0 auto;
 
     .section {
@@ -93,6 +94,7 @@
         color: #333;
         margin-bottom: 0.75rem;
     }
+
 }
 
 .success-banner {
@@ -128,7 +130,16 @@
 }
 
 .section-maps {
-    max-width: 1800px;
+    /* allow the maps panel to use most of the viewport width */
+    max-width: calc(100vw - 3rem);
     width: 100%;
     margin: 0 auto;
+    padding: 1.5rem;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+
+    h2 {
+        display: none; // Hide the h2 since map-canvas has its own header
+    }
 }

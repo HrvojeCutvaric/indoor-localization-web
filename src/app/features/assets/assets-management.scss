@@ -1,0 +1,132 @@
+.asset-management-container {
+  display: flex;
+  gap: 1.5rem;
+  min-height: 500px;
+}
+
+// Modal styles
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+
+  &.delete-confirm {
+    max-width: 400px;
+    text-align: center;
+
+    h3 {
+      margin: 0 0 1rem 0;
+      color: #333;
+    }
+
+    p {
+      margin: 0.5rem 0;
+      color: #666;
+
+      &.warning {
+        color: #d32f2f;
+        font-size: 0.9rem;
+      }
+    }
+
+    .error-message {
+      background: #fee;
+      border: 1px solid #fcc;
+      color: #d32f2f;
+      padding: 0.75rem;
+      border-radius: 6px;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      margin-top: 1.5rem;
+    }
+  }
+}
+
+// Button styles
+.btn {
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &.btn-primary {
+    background: #0095db;
+    color: #fff;
+
+    &:hover:not(:disabled) {
+      background: #007bb8;
+    }
+  }
+
+  &.btn-secondary {
+    background: #f5f5f5;
+    color: #333;
+    border: 1px solid #ddd;
+
+    &:hover:not(:disabled) {
+      background: #eee;
+    }
+  }
+
+  &.btn-danger {
+    background: #d32f2f;
+    color: #fff;
+
+    &:hover:not(:disabled) {
+      background: #b71c1c;
+    }
+  }
+}
+
+.loading-spinner {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

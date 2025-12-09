@@ -24,7 +24,7 @@ import { takeUntil } from 'rxjs/operators';
 })
 
 export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
-  @ViewChild('mapCanvas', { static: true })
+  @ViewChild('mapCanvas', { static: false })
   canvasRef!: ElementRef<HTMLCanvasElement>;
 
   private ctx!: CanvasRenderingContext2D;
@@ -33,8 +33,8 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
   private cdr = inject(ChangeDetectorRef);
   private destroy$ = new Subject<void>();
   private image!: HTMLImageElement;
-  private imageLoaded = false;
-  private mapImagePath: string = '/floormaps/demo-floormap.png';
+  imageLoaded = false;
+  mapImagePath: string = '';
 
   private scale = 1;
   private baseScale = 1;
@@ -55,6 +55,7 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
   private lastDragY = 0;
   private lastTouchDistance = 0;
   private isTouchPanning = false;
+  private hasSelectedMap = false;
 
   @HostListener('window:resize')
   onResize() {
@@ -66,8 +67,11 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit(): void {
     const selectedMap = this.mapService.getSelectedMap();
+    console.log('MapCanvas ngOnInit - selectedMap:', selectedMap);
     if (selectedMap && selectedMap.image) {
       this.mapImagePath = this.mapService.getFullImageUrl(selectedMap.image);
+      this.hasSelectedMap = true;
+      console.log('Set mapImagePath to:', this.mapImagePath);
       if (selectedMap.widthInMeters) {
         this.floorWidthMeters = selectedMap.widthInMeters;
       }
@@ -79,23 +83,36 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
     this.mapService.selectedMap$
       .pipe(takeUntil(this.destroy$))
       .subscribe((map) => {
+        console.log('MapCanvas selectedMap$ subscription - map:', map);
         if (map && map.image) {
           const newImagePath = this.mapService.getFullImageUrl(map.image);
-          if (this.mapImagePath !== newImagePath) {
-            this.mapImagePath = newImagePath;
-            if (map.widthInMeters) {
-              this.floorWidthMeters = map.widthInMeters;
-            }
-            if (map.heightInMeters) {
-              this.floorHeightMeters = map.heightInMeters;
-            }
-            this.imageLoaded = false;
-            if (this.ctx) {
-              this.loadImage();
-            }
+          this.hasSelectedMap = true;
+          this.mapImagePath = newImagePath;
+          console.log('Updated mapImagePath to:', newImagePath);
+          if (map.widthInMeters) {
+            this.floorWidthMeters = map.widthInMeters;
           }
+          if (map.heightInMeters) {
+            this.floorHeightMeters = map.heightInMeters;
+          }
+          this.imageLoaded = false;
+          this.cdr.detectChanges(); // Trigger change detection to render canvas
+          // Use setTimeout to ensure canvas is rendered before we access it
+          setTimeout(() => {
+            this.loadImageIfCanvasReady();
+          }, 0);
         }
       });
+  }
+
+  private loadImageIfCanvasReady(): void {
+    if (this.canvasRef && this.canvasRef.nativeElement && this.mapImagePath) {
+      if (!this.ctx) {
+        this.initCanvas();
+        this.setupCanvasListeners();
+      }
+      this.loadImage();
+    }
   }
 
   ngOnDestroy(): void {
@@ -104,9 +121,15 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
-    this.initCanvas();
-    this.loadImage();
-    this.setupCanvasListeners();
+    if (this.canvasRef && this.canvasRef.nativeElement) {
+      this.initCanvas();
+      this.setupCanvasListeners();
+      // If mapImagePath is already set (from ngOnInit or selectedMap$ subscription),
+      // load the image immediately
+      if (this.mapImagePath) {
+        this.loadImage();
+      }
+    }
   }
 
   private setupCanvasListeners(): void {
@@ -136,17 +159,19 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private loadImage(): void {
+    console.log('Loading image from:', this.mapImagePath);
     const img = new Image();
     img.src = this.mapImagePath;
     img.onload = () => {
+      console.log('Image loaded successfully');
       this.image = img;
       this.imageLoaded = true;
-
+      this.cdr.detectChanges();
       this.setupScaleAndOffset();
       this.draw();
     };
     img.onerror = () => {
-      console.error('Failed to load floor map image');
+      console.error('Failed to load floor map image from:', this.mapImagePath);
     };
   }
 
@@ -212,7 +237,7 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
     const imgW = this.image.width;
     const imgH = this.image.height;
 
-    const pad = 20 / this.scale;
+    const textPad = 5 / this.scale; /* padding for text only, axes start from corner */
 
     ctx.save();
     ctx.lineWidth = 1 / this.scale;
@@ -222,15 +247,16 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const step = 5;
 
-    const xAxisY = imgH - pad;
+    /* X-axis starts at the bottom-left corner (0, imgH) */
+    const xAxisY = imgH;
 
     ctx.beginPath();
-    ctx.moveTo(pad, xAxisY);
-    ctx.lineTo(imgW - pad, xAxisY);
+    ctx.moveTo(0, xAxisY);
+    ctx.lineTo(imgW, xAxisY);
     ctx.stroke();
 
     for (let m = step; m < this.floorWidthMeters; m += step) {
-      const x = pad + m * this.pxPerMeterX;
+      const x = m * this.pxPerMeterX;
 
       ctx.beginPath();
       ctx.moveTo(x, xAxisY);
@@ -240,15 +266,16 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
       ctx.fillText(m.toString(), x - 4 / this.scale, xAxisY + 14 / this.scale);
     }
 
-    const yAxisX = pad;
+    /* Y-axis starts at the bottom-left corner (0, imgH) and goes to top-left (0, 0) */
+    const yAxisX = 0;
 
     ctx.beginPath();
-    ctx.moveTo(yAxisX, imgH - pad);
-    ctx.lineTo(yAxisX, pad);
+    ctx.moveTo(yAxisX, imgH);
+    ctx.lineTo(yAxisX, 0);
     ctx.stroke();
 
     for (let m = step; m < this.floorHeightMeters; m += step) {
-      const y = imgH - pad - m * this.pxPerMeterY;
+      const y = imgH - m * this.pxPerMeterY;
 
       ctx.beginPath();
       ctx.moveTo(yAxisX, y);

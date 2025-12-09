@@ -20,5 +20,9 @@ export interface CreateAssetRequest {
 
 export interface UpdateAssetRequest {
     name: string;
+    x: number;
+    y: number;
+    floorMapId: number;
+    active: boolean;
     color: string;
 }

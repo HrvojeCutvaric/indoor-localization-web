@@ -41,6 +41,34 @@ export class AssetService {
       .pipe(catchError(error => this.handleError(error)));
   }
 
+  updateAssetNameColor(id: number, payload: { name: string; color: string }): Promise<any> {
+    return this.http
+      .put(`${this.baseUrl}/${id}`, payload)
+      .toPromise()
+      .catch(error => this.handleError(error as HttpErrorResponse).toPromise());
+  }
+
+  updateAssetCoordinates(id: number, payload: { x: number; y: number }): Promise<any> {
+    return this.http
+      .put(`${this.baseUrl}/${id}/coordinates`, payload)
+      .toPromise()
+      .catch(error => this.handleError(error as HttpErrorResponse).toPromise());
+  }
+
+  updateAssetStatus(id: number, payload: { active: boolean }): Promise<any> {
+    return this.http
+      .put(`${this.baseUrl}/${id}/status`, payload)
+      .toPromise()
+      .catch(error => this.handleError(error as HttpErrorResponse).toPromise());
+  }
+
+  updateAssetFloorMap(id: number, payload: { floorMapId: number }): Promise<any> {
+    return this.http
+      .put(`${this.baseUrl}/${id}/floormap`, payload)
+      .toPromise()
+      .catch(error => this.handleError(error as HttpErrorResponse).toPromise());
+  }
+
   deleteAsset(id: number): Observable<void> {
     return this.http
       .delete<void>(`${this.baseUrl}/${id}`)

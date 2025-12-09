@@ -35,6 +35,10 @@ export class AssetManagement implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     // Load list of assets from backend via AssetService
+    this.loadAssets();
+  }
+
+  private loadAssets(): void {
     this.loading = true;
     this.assetService.getAssets()
       .pipe(takeUntil(this.destroy$))
@@ -147,24 +151,56 @@ export class AssetManagement implements OnInit, OnDestroy {
           }
         });
       } else {
-        // update - backend UpdateAssetRequest only updates name and color
+        // update - backend has separate endpoints for different fields
         this.loading = true;
-        const payload: UpdateAssetRequest = {
-          name: asset.name,
-          color: asset.color ?? '#000000',
-        };
+        
+        // Immediately update UI with new values
+        const assetIdx = this.assets.findIndex(a => a.id === asset.id);
+        if (assetIdx !== -1) {
+          this.assets[assetIdx] = { ...this.assets[assetIdx], ...asset };
+        }
+        this.selectedAsset = { ...this.selectedAsset!, ...asset };
 
-        this.assetService.updateAsset(Number(asset.id), payload).pipe(takeUntil(this.destroy$)).subscribe({
-          next: (updated) => {
-            const idx = this.assets.findIndex(a => a.id === updated.id);
-            if (idx !== -1) this.assets[idx] = updated;
-            this.selectedAsset = updated;
-            this.loading = false;
-          },
-          error: (err) => {
-            console.error('Failed to update asset', err);
-            this.loading = false;
-          }
+        // Call separate backend endpoints for each field group
+        const updateRequests = [];
+
+        // Update name and color
+        updateRequests.push(
+          this.assetService.updateAssetNameColor(Number(asset.id), {
+            name: asset.name,
+            color: asset.color ?? '#000000',
+          })
+        );
+
+        // Update coordinates if they changed
+        updateRequests.push(
+          this.assetService.updateAssetCoordinates(Number(asset.id), {
+            x: asset.x,
+            y: asset.y,
+          })
+        );
+
+        // Update status (active)
+        updateRequests.push(
+          this.assetService.updateAssetStatus(Number(asset.id), {
+            active: asset.active ?? true,
+          })
+        );
+
+        // Update floor map
+        updateRequests.push(
+          this.assetService.updateAssetFloorMap(Number(asset.id), {
+            floorMapId: asset.floorMapId,
+          })
+        );
+
+        // Execute all requests
+        Promise.all(updateRequests).then(() => {
+          this.loading = false;
+          console.log('All asset fields updated successfully');
+        }).catch((err) => {
+          console.error('Error updating asset fields:', err);
+          this.loading = false;
         });
       }
     }

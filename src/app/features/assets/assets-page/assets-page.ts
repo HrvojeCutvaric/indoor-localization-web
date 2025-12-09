@@ -97,6 +97,10 @@ export class AssetsPage implements OnInit {
     this.editingAssetId = asset.id;
     this.editForm = this.fb.group({
       name: [asset.name, Validators.required],
+      x: [asset.x, Validators.required],
+      y: [asset.y, Validators.required],
+      floorMapId: [asset.floorMapId, Validators.required],
+      active: [asset.active, Validators.required],
       color: [asset.color, Validators.required],
     });
   }

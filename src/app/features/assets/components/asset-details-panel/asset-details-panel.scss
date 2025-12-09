@@ -62,6 +62,9 @@
         font-size: 1rem;
         color: #333;
         min-height: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
       }
     }
   }
@@ -72,3 +75,5 @@
     transform: rotate(360deg);
   }
 }
+
+.color-swatch { width: 18px; height: 18px; border-radius: 4px; display: inline-block; border: 1px solid rgba(0,0,0,0.08); }

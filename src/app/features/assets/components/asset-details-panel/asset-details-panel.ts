@@ -1,12 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-
-export interface Asset {
-  id: string;
-  name: string;
-  description?: string;
-  status?: string;
-}
+import { Asset } from '../../asset.model';
 
 @Component({
   selector: 'app-asset-details-panel',

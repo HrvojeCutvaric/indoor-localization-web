@@ -20,8 +20,8 @@ describe('AssetListSidebar', () => {
   });
 
   it('should emit assetSelected when an asset is clicked', () => {
-    const asset = { id: '1', name: 'Test Asset' };
-    jest.spyOn(component.assetSelected, 'emit');
+    const asset = { id: 1, name: 'Test Asset' };
+    const asset = { id: 1, name: 'Test Asset' };
     
     component.onSelectAsset(asset);
     

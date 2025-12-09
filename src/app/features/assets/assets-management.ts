@@ -1,16 +1,13 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subject } from 'rxjs';
+import { AssetService } from './asset.service';
+import { CreateAssetRequest, UpdateAssetRequest } from './asset.model';
+import { takeUntil } from 'rxjs/operators';
 import { AssetListSidebar } from './components/asset-list-sidebar/asset-list-sidebar';
 import { AssetDetailsPanel } from './components/asset-details-panel/asset-details-panel';
 import { AssetUploadForm } from './components/asset-upload-form/asset-upload-form';
-
-export interface Asset {
-  id: string;
-  name: string;
-  description?: string;
-  status?: string;
-}
+import { Asset } from './asset.model';
 
 @Component({
   selector: 'app-asset-management',
@@ -21,6 +18,7 @@ export interface Asset {
 })
 export class AssetManagement implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
+  private assetService = inject(AssetService);
 
   assets: Asset[] = [];
   selectedAsset: Asset | null = null;
@@ -36,7 +34,20 @@ export class AssetManagement implements OnInit, OnDestroy {
   deleteError: string | null = null;
 
   ngOnInit(): void {
-    // TODO: In SCRUM-36, inject AssetService and subscribe to assets$, selectedAsset$, loading$
+    // Load list of assets from backend via AssetService
+    this.loading = true;
+    this.assetService.getAssets()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (assets) => {
+          this.assets = assets;
+          this.loading = false;
+        },
+        error: (err) => {
+          console.error('Failed to load assets', err);
+          this.loading = false;
+        }
+      });
   }
 
   ngOnDestroy(): void {
@@ -45,8 +56,20 @@ export class AssetManagement implements OnInit, OnDestroy {
   }
 
   onAssetSelected(asset: Asset): void {
-    this.selectedAsset = asset;
-    // TODO: In SCRUM-36, call assetService.setSelectedAsset(asset);
+    // fetch latest details from backend and set selected
+    this.loading = true;
+    this.assetService.getAssetById(Number(asset.id))
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (a) => {
+          this.selectedAsset = a;
+          this.loading = false;
+        },
+        error: (err) => {
+          console.error('Failed to fetch asset details', err);
+          this.loading = false;
+        }
+      });
   }
 
   onAddAsset(): void {
@@ -77,15 +100,20 @@ export class AssetManagement implements OnInit, OnDestroy {
     this.deleteLoading = true;
     this.deleteError = null;
 
-    // TODO: In SCRUM-36, call assetService.deleteAsset(this.assetToDelete.id)
-    // and handle response in subscribe callbacks
-    setTimeout(() => {
-      this.deleteLoading = false;
-      this.showDeleteConfirm = false;
-      this.assets = this.assets.filter(a => a.id !== this.assetToDelete?.id);
-      this.selectedAsset = null;
-      this.assetToDelete = null;
-    }, 500);
+    // call feature service delete
+    this.assetService.deleteAsset(Number(this.assetToDelete.id)).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => {
+        this.deleteLoading = false;
+        this.showDeleteConfirm = false;
+        this.assets = this.assets.filter(a => a.id !== this.assetToDelete?.id);
+        this.selectedAsset = null;
+        this.assetToDelete = null;
+      },
+      error: (err) => {
+        this.deleteLoading = false;
+        this.deleteError = err?.message || 'Failed to delete asset';
+      }
+    });
   }
 
   cancelDelete(): void {
@@ -97,12 +125,47 @@ export class AssetManagement implements OnInit, OnDestroy {
   onFormSubmitted(asset: Asset | null): void {
     if (asset) {
       if (this.formMode === 'create') {
-        this.assets.push(asset);
+        this.loading = true;
+        const payload: CreateAssetRequest = {
+          name: asset.name,
+          x: asset.x,
+          y: asset.y,
+          floorMapId: asset.floorMapId,
+          active: asset.active ?? true,
+          color: asset.color ?? '#000000',
+        };
+
+        this.assetService.createAsset(payload).pipe(takeUntil(this.destroy$)).subscribe({
+          next: (created) => {
+            this.assets.push(created);
+            this.selectedAsset = created;
+            this.loading = false;
+          },
+          error: (err) => {
+            console.error('Failed to create asset', err);
+            this.loading = false;
+          }
+        });
       } else {
-        const idx = this.assets.findIndex(a => a.id === asset.id);
-        if (idx !== -1) {
-          this.assets[idx] = asset;
-        }
+        // update - backend UpdateAssetRequest only updates name and color
+        this.loading = true;
+        const payload: UpdateAssetRequest = {
+          name: asset.name,
+          color: asset.color ?? '#000000',
+        };
+
+        this.assetService.updateAsset(Number(asset.id), payload).pipe(takeUntil(this.destroy$)).subscribe({
+          next: (updated) => {
+            const idx = this.assets.findIndex(a => a.id === updated.id);
+            if (idx !== -1) this.assets[idx] = updated;
+            this.selectedAsset = updated;
+            this.loading = false;
+          },
+          error: (err) => {
+            console.error('Failed to update asset', err);
+            this.loading = false;
+          }
+        });
       }
     }
     this.showForm = false;

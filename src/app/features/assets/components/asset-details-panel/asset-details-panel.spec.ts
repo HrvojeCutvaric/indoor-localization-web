@@ -20,7 +20,7 @@ describe('AssetDetailsPanel', () => {
   });
 
   it('should display asset details when asset is provided', () => {
-    component.asset = { id: '1', name: 'Test Asset', description: 'Test Description', status: 'Active' };
+    component.asset = { id: 1, name: 'Test Asset', x: 10, y: 20, floorMapId: 2, active: true, color: '#ffaa00' } as any;
     fixture.detectChanges();
     
     const compiled = fixture.nativeElement;

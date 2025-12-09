@@ -18,13 +18,33 @@
       </div>
 
       <div class="info-row">
-        <span class="label">Description:</span>
-        <span class="value">{{ asset.description || '—' }}</span>
+        <span class="label">X:</span>
+        <span class="value">{{ asset.x }}</span>
       </div>
 
       <div class="info-row">
-        <span class="label">Status:</span>
-        <span class="value">{{ asset.status || '—' }}</span>
+        <span class="label">Y:</span>
+        <span class="value">{{ asset.y }}</span>
+      </div>
+
+      <div class="info-row">
+        <span class="label">Floor map ID:</span>
+        <span class="value">{{ asset.floorMapId }}</span>
+      </div>
+
+      <div class="info-row">
+        <span class="label">Active:</span>
+        <span class="value">{{ asset.active ? 'Yes' : 'No' }}</span>
+      </div>
+
+      <div class="info-row">
+        <span class="label">Color:</span>
+        <span class="value"><span class="color-swatch" [style.background]="asset.color"></span> {{ asset.color }}</span>
+      </div>
+
+      <div class="info-row" *ngIf="asset.lastSync">
+        <span class="label">Last synced:</span>
+        <span class="value">{{ asset.lastSync }}</span>
       </div>
     </div>
   </div>

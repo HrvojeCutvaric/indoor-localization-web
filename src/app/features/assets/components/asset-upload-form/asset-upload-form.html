@@ -16,26 +16,42 @@
       </div>
     </div>
 
-    <div class="form-group">
-      <label for="description">Description</label>
-      <textarea
-        id="description"
-        formControlName="description"
-        placeholder="Enter asset description (optional)"
-        rows="3"
-        [disabled]="isLoading"
-      ></textarea>
+    <div class="form-row two-cols">
+      <div class="form-group">
+        <label for="x">X (meters)</label>
+        <input type="number" id="x" formControlName="x" [disabled]="isLoading" />
+      </div>
+
+      <div class="form-group">
+        <label for="y">Y (meters)</label>
+        <input type="number" id="y" formControlName="y" [disabled]="isLoading" />
+      </div>
+    </div>
+
+    <div class="form-row two-cols">
+      <div class="form-group" [ngClass]="{ 'has-error': f['floorMapId'].invalid && f['floorMapId'].touched }">
+        <label for="floorMapId">Floor Map *</label>
+        <select id="floorMapId" formControlName="floorMapId" [disabled]="isLoading || mapsLoading">
+          <option value="" disabled selected>{{ mapsLoading ? 'Loading maps...' : 'Select a floor map' }}</option>
+          <option *ngFor="let map of maps" [ngValue]="getMapIdAsNumber(map.id)">
+            {{ map.name }}
+          </option>
+        </select>
+        <div class="error-text" *ngIf="f['floorMapId'].invalid && f['floorMapId'].touched">
+          <span *ngIf="f['floorMapId'].errors?.['required']">Floor map is required.</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="color">Color</label>
+        <input type="color" id="color" formControlName="color" [disabled]="isLoading" />
+      </div>
     </div>
 
     <div class="form-group">
-      <label for="status">Status</label>
-      <input
-        type="text"
-        id="status"
-        formControlName="status"
-        placeholder="e.g., Active, Inactive"
-        [disabled]="isLoading"
-      />
+      <label>
+        <input type="checkbox" formControlName="active" [disabled]="isLoading" /> Active
+      </label>
     </div>
 
     <div class="api-error" *ngIf="errorMessage">

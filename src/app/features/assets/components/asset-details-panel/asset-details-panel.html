@@ -18,18 +18,18 @@
       </div>
 
       <div class="info-row">
-        <span class="label">X:</span>
+        <span class="label">X (meters):</span>
         <span class="value">{{ asset.x }}</span>
       </div>
 
       <div class="info-row">
-        <span class="label">Y:</span>
+        <span class="label">Y (meters):</span>
         <span class="value">{{ asset.y }}</span>
       </div>
 
       <div class="info-row">
-        <span class="label">Floor map ID:</span>
-        <span class="value">{{ asset.floorMapId }}</span>
+        <span class="label">Floor map:</span>
+        <span class="value">{{ floorMapName }}</span>
       </div>
 
       <div class="info-row">
@@ -39,12 +39,15 @@
 
       <div class="info-row">
         <span class="label">Color:</span>
-        <span class="value"><span class="color-swatch" [style.background]="asset.color"></span> {{ asset.color }}</span>
+        <span class="color-swatch" [style.background]="asset.color || '#ccc'"></span>
+        <span class="value">{{ asset.color || 'N/A' }}</span>
       </div>
 
-      <div class="info-row" *ngIf="asset.lastSync">
+      <div class="info-row">
         <span class="label">Last synced:</span>
-        <span class="value">{{ asset.lastSync }}</span>
+        <span class="value">
+          {{ asset.lastSync ? (asset.lastSync | date:'dd.MM.yyyy HH:mm:ss') : 'Never synced' }}
+        </span>
       </div>
     </div>
   </div>

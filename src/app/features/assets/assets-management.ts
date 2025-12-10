@@ -8,6 +8,7 @@ import { AssetListSidebar } from './components/asset-list-sidebar/asset-list-sid
 import { AssetDetailsPanel } from './components/asset-details-panel/asset-details-panel';
 import { AssetUploadForm } from './components/asset-upload-form/asset-upload-form';
 import { Asset } from './asset.model';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-asset-management',
@@ -34,7 +35,6 @@ export class AssetManagement implements OnInit, OnDestroy {
   deleteError: string | null = null;
 
   ngOnInit(): void {
-    // Load list of assets from backend via AssetService
     this.loadAssets();
   }
 
@@ -60,7 +60,6 @@ export class AssetManagement implements OnInit, OnDestroy {
   }
 
   onAssetSelected(asset: Asset): void {
-    // fetch latest details from backend and set selected
     this.loading = true;
     this.assetService.getAssetById(Number(asset.id))
       .pipe(takeUntil(this.destroy$))
@@ -104,7 +103,6 @@ export class AssetManagement implements OnInit, OnDestroy {
     this.deleteLoading = true;
     this.deleteError = null;
 
-    // call feature service delete
     this.assetService.deleteAsset(Number(this.assetToDelete.id)).pipe(takeUntil(this.destroy$)).subscribe({
       next: () => {
         this.deleteLoading = false;
@@ -151,57 +149,64 @@ export class AssetManagement implements OnInit, OnDestroy {
           }
         });
       } else {
-        // update - backend has separate endpoints for different fields
         this.loading = true;
-        
-        // Immediately update UI with new values
-        const assetIdx = this.assets.findIndex(a => a.id === asset.id);
+
+        const id = Number(asset.id);
+
+        const assetIdx = this.assets.findIndex(a => a.id === id);
         if (assetIdx !== -1) {
           this.assets[assetIdx] = { ...this.assets[assetIdx], ...asset };
         }
         this.selectedAsset = { ...this.selectedAsset!, ...asset };
 
-        // Call separate backend endpoints for each field group
-        const updateRequests = [];
-
-        // Update name and color
-        updateRequests.push(
-          this.assetService.updateAssetNameColor(Number(asset.id), {
+        const updateRequests = [
+          this.assetService.updateAssetNameColor(id, {
             name: asset.name,
             color: asset.color ?? '#000000',
-          })
-        );
-
-        // Update coordinates if they changed
-        updateRequests.push(
-          this.assetService.updateAssetCoordinates(Number(asset.id), {
+          }),
+          this.assetService.updateAssetCoordinates(id, {
             x: asset.x,
             y: asset.y,
-          })
-        );
-
-        // Update status (active)
-        updateRequests.push(
-          this.assetService.updateAssetStatus(Number(asset.id), {
+          }),
+          this.assetService.updateAssetStatus(id, {
             active: asset.active ?? true,
-          })
-        );
-
-        // Update floor map
-        updateRequests.push(
-          this.assetService.updateAssetFloorMap(Number(asset.id), {
+          }),
+          this.assetService.updateAssetFloorMap(id, {
             floorMapId: asset.floorMapId,
           })
-        );
+        ];
 
-        // Execute all requests
-        Promise.all(updateRequests).then(() => {
-          this.loading = false;
-          console.log('All asset fields updated successfully');
-        }).catch((err) => {
-          console.error('Error updating asset fields:', err);
-          this.loading = false;
-        });
+        forkJoin(updateRequests)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: () => {
+              this.assetService.getAssetById(id)
+                .pipe(takeUntil(this.destroy$))
+                .subscribe({
+                  next: (updated) => {
+                    const idx = this.assets.findIndex(a => a.id === updated.id);
+                    if (idx !== -1) {
+                      this.assets[idx] = updated;
+                    }
+
+                    this.selectedAsset = updated;
+                    this.loading = false;
+                    console.log('Asset updated & refreshed with latest backend data.');
+
+                    this.showForm = false;
+                    this.editingAsset = null;
+                  },
+                  error: (err) => {
+                    console.error('Failed to refresh updated asset', err);
+                    this.loading = false;
+                  }
+                });
+            },
+            error: (err) => {
+              console.error('Error updating asset fields:', err);
+              this.loading = false;
+            }
+          });
       }
     }
     this.showForm = false;

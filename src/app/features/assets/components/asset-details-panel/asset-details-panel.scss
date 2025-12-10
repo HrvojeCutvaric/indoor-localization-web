@@ -76,4 +76,21 @@
   }
 }
 
-.color-swatch { width: 18px; height: 18px; border-radius: 4px; display: inline-block; border: 1px solid rgba(0,0,0,0.08); }
+.color-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  display: inline-block;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.detail-item {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  align-items: center;
+  margin-bottom: 0.75rem;
+
+  label {
+    font-weight: 600;
+  }
+}

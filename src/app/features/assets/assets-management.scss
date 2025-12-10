@@ -1,10 +1,13 @@
 .asset-management-container {
   display: flex;
   gap: 1.5rem;
-  min-height: 500px;
 }
 
-// Modal styles
+app-asset-details-panel {
+  flex: 1;
+  max-width: 100%;
+}
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -66,7 +69,6 @@
   }
 }
 
-// Button styles
 .btn {
   padding: 0.6rem 1.2rem;
   border-radius: 6px;

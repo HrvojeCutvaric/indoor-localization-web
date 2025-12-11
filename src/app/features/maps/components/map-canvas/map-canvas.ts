@@ -11,11 +11,12 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { MapService, Map } from '../../../../core/services/map.service';
+import { MapService, type Map } from '../../../../core/services/map.service';
 import { AssetService } from '../../../../features/assets/asset.service';
 import { Asset } from '../../../../features/assets/asset.model';
-import { Subject, interval, Subscription } from 'rxjs';
-import { takeUntil, switchMap } from 'rxjs/operators';
+import { Subject, Subscription } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { AppMqttService } from '../../../../core/services/mqtt.service';
 
 @Component({
   selector: 'app-map-canvas',
@@ -35,12 +36,18 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
   private cdr = inject(ChangeDetectorRef);
   private destroy$ = new Subject<void>();
   private assetService = inject(AssetService);
+  private mqttService = inject(AppMqttService);
   private assets: Asset[] = [];
   private assetUpdateSubscription?: Subscription;
-  private readonly UPDATE_INTERVAL_MS = 2000; // Update every 2 seconds
   private image!: HTMLImageElement;
   imageLoaded = false;
   mapImagePath: string = '';
+
+  // Animation properties
+  private assetAnimationStates: Record<number, { currentX: number; currentY: number; targetX: number; targetY: number }> = {};
+  private animationFrameId: number | null = null;
+  private lastFrameTime = 0;
+  private readonly LERP_SPEED = 0.1; // 0-1, higher = faster animation (10% per frame)
 
   private scale = 1;
   private baseScale = 1;
@@ -134,20 +141,97 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
     const selectedMap = this.mapService.getSelectedMap();
     if (!selectedMap) return;
 
-    this.assetUpdateSubscription = interval(this.UPDATE_INTERVAL_MS)
-      .pipe(
-        takeUntil(this.destroy$),
-        switchMap(() => this.assetService.getAssetsByFloorMap(Number(selectedMap.id)))
-      )
+    // Subscribe to MQTT asset updates
+    this.assetUpdateSubscription = this.mqttService
+      .getAssetUpdates()
+      .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (assets) => {
-          this.assets = assets.filter(asset => asset.active); // Only show active assets
-          this.draw(); // Redraw canvas with updated assets
+        next: (mqttAssets) => {
+          // Filter assets for the current floor map and only active ones
+          const filteredAssets = mqttAssets.filter(
+            asset => asset.floorMapId === Number(selectedMap.id) && asset.active
+          );
+
+          // Update animation states for new positions
+          filteredAssets.forEach(asset => {
+            if (asset.x !== null && asset.x !== undefined && asset.y !== null && asset.y !== undefined) {
+              const state = this.assetAnimationStates[asset.id];
+              if (!state) {
+                // First time seeing this asset, initialize at target position
+                this.assetAnimationStates[asset.id] = {
+                  currentX: asset.x,
+                  currentY: asset.y,
+                  targetX: asset.x,
+                  targetY: asset.y,
+                };
+              } else {
+                // Update target position for animation
+                state.targetX = asset.x;
+                state.targetY = asset.y;
+              }
+            }
+          });
+
+          // Remove animation states for assets no longer in this map
+          const assetIds = new Set(filteredAssets.map(a => a.id));
+          for (const id in this.assetAnimationStates) {
+            if (!assetIds.has(Number(id))) {
+              delete this.assetAnimationStates[Number(id)];
+            }
+          }
+
+          this.assets = filteredAssets;
+          
+          // Start animation loop if not already running
+          if (!this.animationFrameId) {
+            this.startAnimationLoop();
+          }
         },
         error: (err) => {
-          console.error('Failed to fetch assets for live updates:', err);
+          console.error('Failed to receive asset updates from MQTT:', err);
         }
       });
+  }
+
+  private startAnimationLoop(): void {
+    const animate = (currentTime: number) => {
+      const deltaTime = this.lastFrameTime ? (currentTime - this.lastFrameTime) / 1000 : 0;
+      this.lastFrameTime = currentTime;
+
+      // Update animation states with linear interpolation
+      let hasActiveAnimation = false;
+      for (const assetId in this.assetAnimationStates) {
+        const state = this.assetAnimationStates[assetId];
+        // Smoothly interpolate towards target position
+        const distance = Math.sqrt(
+          Math.pow(state.targetX - state.currentX, 2) + 
+          Math.pow(state.targetY - state.currentY, 2)
+        );
+
+        if (distance > 0.01) { // Only animate if distance is significant
+          hasActiveAnimation = true;
+          // Use LERP_SPEED as interpolation factor
+          state.currentX += (state.targetX - state.currentX) * this.LERP_SPEED;
+          state.currentY += (state.targetY - state.currentY) * this.LERP_SPEED;
+        } else {
+          // Snap to target if very close
+          state.currentX = state.targetX;
+          state.currentY = state.targetY;
+        }
+      }
+
+      // Draw with interpolated positions
+      this.draw();
+
+      // Continue animation if there are still active animations
+      if (hasActiveAnimation) {
+        this.animationFrameId = requestAnimationFrame(animate);
+      } else {
+        this.animationFrameId = null;
+      }
+    };
+
+    this.animationFrameId = requestAnimationFrame(animate);
   }
 
   private stopAssetUpdates(): void {
@@ -155,6 +239,11 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
       this.assetUpdateSubscription.unsubscribe();
       this.assetUpdateSubscription = undefined;
     }
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
+    }
+    this.assetAnimationStates = {};
   }
 
   ngOnDestroy(): void {
@@ -342,9 +431,14 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
       if (asset.x !== null && asset.x !== undefined && 
           asset.y !== null && asset.y !== undefined) {
         
+        // Get interpolated position from animation state
+        const animState = this.assetAnimationStates[asset.id];
+        const displayX = animState ? animState.currentX : asset.x;
+        const displayY = animState ? animState.currentY : asset.y;
+        
         // Convert meters to pixels
-        const pixelX = asset.x * this.pxPerMeterX;
-        const pixelY = this.image.height - (asset.y * this.pxPerMeterY); // Flip Y coordinate
+        const pixelX = displayX * this.pxPerMeterX;
+        const pixelY = this.image.height - (displayY * this.pxPerMeterY); // Flip Y coordinate
         
         // Draw asset circle
         ctx.beginPath();

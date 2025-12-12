@@ -55,8 +55,6 @@ describe('AssetUploadForm', () => {
 
   it('should have valid form when required fields are provided', () => {
     component.form.controls['name'].setValue('Test Asset');
-    component.form.controls['x'].setValue(10);
-    component.form.controls['y'].setValue(20);
     component.form.controls['floorMapId'].setValue(1);
     component.form.controls['color'].setValue('#00ff00');
     expect(component.form.valid).toBeTruthy();
@@ -76,8 +74,6 @@ describe('AssetUploadForm', () => {
     component.ngOnInit();
     
     expect(component.form.get('name')?.value).toBe('Test Asset');
-    expect(component.form.get('x')?.value).toBe(5);
-    expect(component.form.get('y')?.value).toBe(6);
     expect(component.form.get('floorMapId')?.value).toBe(2);
     expect(component.form.get('color')?.value).toBe('#112233');
   });

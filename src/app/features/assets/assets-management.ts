@@ -130,8 +130,8 @@ export class AssetManagement implements OnInit, OnDestroy {
         this.loading = true;
         const payload: CreateAssetRequest = {
           name: asset.name,
-          x: asset.x,
-          y: asset.y,
+          x: null as any,
+          y: null as any,
           floorMapId: asset.floorMapId,
           active: asset.active ?? true,
           color: asset.color ?? '#000000',
@@ -163,10 +163,6 @@ export class AssetManagement implements OnInit, OnDestroy {
           this.assetService.updateAssetNameColor(id, {
             name: asset.name,
             color: asset.color ?? '#000000',
-          }),
-          this.assetService.updateAssetCoordinates(id, {
-            x: asset.x,
-            y: asset.y,
           }),
           this.assetService.updateAssetStatus(id, {
             active: asset.active ?? true,

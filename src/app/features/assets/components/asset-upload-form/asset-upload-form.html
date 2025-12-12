@@ -17,18 +17,6 @@
     </div>
 
     <div class="form-row two-cols">
-      <div class="form-group">
-        <label for="x">X (meters)</label>
-        <input type="number" id="x" formControlName="x" [disabled]="isLoading" />
-      </div>
-
-      <div class="form-group">
-        <label for="y">Y (meters)</label>
-        <input type="number" id="y" formControlName="y" [disabled]="isLoading" />
-      </div>
-    </div>
-
-    <div class="form-row two-cols">
       <div class="form-group" [ngClass]="{ 'has-error': f['floorMapId'].invalid && f['floorMapId'].touched }">
         <label for="floorMapId">Floor Map *</label>
         <select id="floorMapId" formControlName="floorMapId" [disabled]="isLoading || mapsLoading">

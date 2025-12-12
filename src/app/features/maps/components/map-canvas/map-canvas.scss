@@ -1,0 +1,132 @@
+:host {
+    display: block;
+    width: 100%;
+}
+
+.map-card__header {
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.header-content {
+    flex: 1;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.zoom-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.zoom-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #333;
+    transition: all 0.2s;
+
+    &:hover {
+        background-color: #e9edf1;
+        border-color: #bbb;
+    }
+
+    &:active {
+        transform: scale(0.98);
+    }
+}
+
+.map-card__title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 4px;
+}
+
+.btn-go-to-maps {
+    background-color: #0095db;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    white-space: nowrap;
+    font-size: 0.9rem;
+
+    &:hover {
+        background-color: #0077b6;
+    }
+
+    &:active {
+        transform: scale(0.98);
+    }
+}
+
+.map-card__content {
+    border-radius: 10px;
+    background: linear-gradient(135deg, #f9fafb, #eef2ff);
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+.map-canvas-wrapper {
+    width: 100%;
+    /* bigger, more immersive map area — give at least ~80px more vertical space */
+    height: min(72vh, 980px);
+    min-height: 720px; /* increased by ~80px */
+    max-height: calc(100vh - 100px);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+    overflow: hidden;
+}
+
+canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    background: #ffffff;
+}
+
+.no-map-message {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: #999;
+    font-size: 1.1rem;
+    font-weight: 500;
+    text-align: center;
+    padding: 2rem;
+    box-sizing: border-box;
+
+    p {
+        margin: 0;
+        max-width: 300px;
+    }
+}

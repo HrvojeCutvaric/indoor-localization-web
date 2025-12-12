@@ -1,0 +1,34 @@
+<div class="map-list-container">
+  @if (maps.length === 0 && !loading) {
+    <div class="empty-state">
+      <p class="empty-message">No maps available. Upload your first map to get started.</p>
+    </div>
+  }
+
+  @if (maps.length > 0) {
+    <div class="maps-grid">
+      @for (map of maps; track map.id) {
+        <div class="map-card">
+          <div class="map-image-wrapper">
+            <img [src]="getImageUrl(map.image)" [alt]="map.name" class="map-image" />
+            <div class="map-overlay">
+              <button class="btn-icon view" (click)="onView(map.id)" title="View map">
+                👁️
+              </button>
+              <button class="btn-icon edit" (click)="onEdit(map.id)" title="Edit map">
+                ✏️
+              </button>
+              <button class="btn-icon delete" (click)="onDelete(map.id)" title="Delete map">
+                🗑️
+              </button>
+            </div>
+          </div>
+
+          <div class="map-info">
+            <h4 class="map-name">{{ map.name }}</h4>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

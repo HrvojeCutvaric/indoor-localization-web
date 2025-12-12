@@ -1,0 +1,215 @@
+.form-container {
+  h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 1.5rem 0;
+  }
+
+  /* styling for color control and checkbox alignment */
+  .form-group .color-control {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+
+    .color-preview {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid #e6e6e6;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2), 0 2px 6px rgba(10,10,10,0.06);
+      z-index: 1;
+    }
+
+    .color-hex {
+      padding: 0.4rem 0.6rem;
+      background: #f5f7fb;
+      border: 1px solid #e6e9ef;
+      border-radius: 6px;
+      color: #222;
+      font-family: monospace;
+      font-size: 0.9rem;
+      min-width: 80px;
+      text-align: center;
+    }
+
+    /* overlay the native input on top of the preview, hidden visually but accessible */
+    .color-input {
+      position: absolute;
+      left: 0.25rem; /* center on the preview */
+      top: 50%;
+      transform: translateY(-50%);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      opacity: 0;
+      border: none;
+      cursor: pointer;
+      z-index: 2;
+      padding: 0;
+      background: transparent;
+    }
+  }
+
+  .form-group .checkbox-label {
+    /* checkbox sits directly to the right of the text, vertically centered */
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+
+    .checkbox-text {
+      font-weight: 600;
+      color: #333;
+      font-size: 0.95rem;
+    }
+
+    input[type='checkbox'] {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      display: inline-block;
+      cursor: pointer;
+      /* nudge for perfect vertical centering in some browsers */
+      transform: translateY(1px);
+    }
+  }
+
+  .form-group {
+    margin-bottom: 1.25rem;
+
+    label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 0.4rem;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      padding: 0.7rem 0.8rem;
+      border: 1px solid #bdbdbd;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      outline: none;
+      transition: all 0.2s;
+
+      &:focus {
+        border-color: #0095db;
+        box-shadow: 0 0 0 3px rgba(0, 149, 219, 0.1);
+      }
+
+      &:disabled {
+        background-color: #f5f5f5;
+        cursor: not-allowed;
+        opacity: 0.7;
+      }
+    }
+
+    select {
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 0.7rem center;
+      background-size: 1.2em 1.2em;
+      padding-right: 2.5rem;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    &.has-error {
+      input,
+      textarea,
+      select {
+        border-color: #d32f2f;
+        background-color: #fff5f5;
+      }
+    }
+  }
+
+  .error-text {
+    display: block;
+    color: #d32f2f;
+    font-size: 0.85rem;
+    margin-top: 0.4rem;
+  }
+
+  .api-error {
+    background-color: #fee;
+    border: 1px solid #fcc;
+    border-radius: 6px;
+    padding: 0.8rem;
+    margin-bottom: 1rem;
+    color: #d32f2f;
+    font-size: 0.9rem;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-start;
+    margin-top: 1.5rem;
+
+    .btn {
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      &.btn-primary {
+        background: #0095db;
+        color: #fff;
+
+        &:hover:not(:disabled) {
+          background: #007bb8;
+        }
+      }
+
+      &.btn-secondary {
+        background: #f5f5f5;
+        color: #333;
+        border: 1px solid #ddd;
+
+        &:hover:not(:disabled) {
+          background: #eee;
+        }
+      }
+    }
+  }
+
+  .loading-spinner {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

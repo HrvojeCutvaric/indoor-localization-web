@@ -1,0 +1,54 @@
+<div class="details-panel">
+  <h3>Asset details</h3>
+
+  <div class="details-content">
+    <div class="loading-state" *ngIf="loading">
+      <span class="spinner"></span>
+      <p>Loading...</p>
+    </div>
+
+    <div class="empty-state" *ngIf="!loading && !asset">
+      <p>Select an asset to view details</p>
+    </div>
+
+    <div class="asset-info" *ngIf="!loading && asset">
+      <div class="info-row">
+        <span class="label">Name:</span>
+        <span class="value">{{ asset.name }}</span>
+      </div>
+
+      <div class="info-row">
+        <span class="label">X (meters):</span>
+        <span class="value">{{ asset.x }}</span>
+      </div>
+
+      <div class="info-row">
+        <span class="label">Y (meters):</span>
+        <span class="value">{{ asset.y }}</span>
+      </div>
+
+      <div class="info-row">
+        <span class="label">Floor map:</span>
+        <span class="value">{{ floorMapName }}</span>
+      </div>
+
+      <div class="info-row">
+        <span class="label">Active:</span>
+        <span class="value">{{ asset.active ? 'Yes' : 'No' }}</span>
+      </div>
+
+      <div class="info-row">
+        <span class="label">Color:</span>
+        <span class="color-swatch" [style.background]="asset.color || '#ccc'"></span>
+        <span class="value">{{ asset.color || 'N/A' }}</span>
+      </div>
+
+      <div class="info-row">
+        <span class="label">Last synced:</span>
+        <span class="value">
+          {{ asset.lastSync ? (asset.lastSync | date:'dd.MM.yyyy HH:mm:ss') : 'Never synced' }}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>

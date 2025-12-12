@@ -1,0 +1,28 @@
+<div class="map-management-container">
+  <div class="header">
+    <h1>Map Management</h1>
+    <button class="btn btn-primary" (click)="showUploadForm = !showUploadForm" [disabled]="loading">
+      {{ showUploadForm ? 'Cancel' : '+ Upload New Map' }}
+    </button>
+  </div>
+
+  <div class="upload-section" *ngIf="showUploadForm">
+    <app-map-upload-form [mapId]="selectedMapId" (uploaded)="onMapUploaded()"
+      (cancelled)="closeUploadForm()"></app-map-upload-form>
+  </div>
+
+  <div class="maps-section">
+    <div class="loading-spinner" *ngIf="loading">
+      <span class="spinner"></span>
+      <p>Loading maps...</p>
+    </div>
+
+    <app-map-list
+      [maps]="maps"
+      [loading]="loading"
+      (delete)="onMapDeleted($event)"
+      (edit)="onMapEdited($event)"
+      (view)="onMapViewed($event)"
+    ></app-map-list>
+  </div>
+</div>

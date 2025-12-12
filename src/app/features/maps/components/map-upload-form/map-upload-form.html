@@ -1,0 +1,97 @@
+<div class="upload-form-container">
+  <h3>{{ mapId ? 'Update Map' : 'Upload New Map' }}</h3>
+
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <div class="form-group" [ngClass]="{ 'has-error': f['name'].invalid && f['name'].touched }">
+      <label for="name">Map Name *</label>
+      <input
+        type="text"
+        id="name"
+        formControlName="name"
+        placeholder="e.g., Ground Floor"
+        [disabled]="isLoading"
+      />
+      <div class="error-text" *ngIf="f['name'].invalid && f['name'].touched">
+        <span *ngIf="f['name'].errors?.['required']">Name is required.</span>
+        <span *ngIf="f['name'].errors?.['minlength']">Min 3 characters.</span>
+      </div>
+    </div>
+
+    <div class="form-row dimensions-row">
+      <div class="form-group" [ngClass]="{ 'has-error': f['widthInMeters'].invalid && f['widthInMeters'].touched }">
+        <label for="widthInMeters">Width (meters) *</label>
+        <input
+          type="number"
+          id="widthInMeters"
+          formControlName="widthInMeters"
+          placeholder="e.g., 50"
+          min="1"
+          max="1000"
+          [disabled]="isLoading"
+        />
+        <div class="error-text" *ngIf="f['widthInMeters'].invalid && f['widthInMeters'].touched">
+          <span *ngIf="f['widthInMeters'].errors?.['required']">Width is required.</span>
+          <span *ngIf="f['widthInMeters'].errors?.['min']">Min 1 meter.</span>
+          <span *ngIf="f['widthInMeters'].errors?.['max']">Max 1000 meters.</span>
+        </div>
+      </div>
+
+      <div class="form-group" [ngClass]="{ 'has-error': f['heightInMeters'].invalid && f['heightInMeters'].touched }">
+        <label for="heightInMeters">Height (meters) *</label>
+        <input
+          type="number"
+          id="heightInMeters"
+          formControlName="heightInMeters"
+          placeholder="e.g., 30"
+          min="1"
+          max="1000"
+          [disabled]="isLoading"
+        />
+        <div class="error-text" *ngIf="f['heightInMeters'].invalid && f['heightInMeters'].touched">
+          <span *ngIf="f['heightInMeters'].errors?.['required']">Height is required.</span>
+          <span *ngIf="f['heightInMeters'].errors?.['min']">Min 1 meter.</span>
+          <span *ngIf="f['heightInMeters'].errors?.['max']">Max 1000 meters.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group image-upload">
+      <label for="image">Map Image *</label>
+      <div class="image-input-wrapper">
+        <input
+          type="file"
+          id="image"
+          (change)="onFileSelected($event)"
+          accept="image/*"
+          [disabled]="isLoading"
+        />
+        <span class="file-label">Choose Image</span>
+      </div>
+      <div class="error-text" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+    </div>
+    <div class="image-preview" *ngIf="filePreview">
+      <img [src]="filePreview" alt="Map preview" />
+    </div>
+    <div class="api-error" *ngIf="errorMessage && !selectedFile">
+      {{ errorMessage }}
+    </div>
+    <div class="form-actions">
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="form.invalid || isLoading"
+      >
+        <span *ngIf="!isLoading">{{ mapId ? 'Update Map' : 'Upload Map' }}</span>
+        <span *ngIf="isLoading" class="loading-spinner">
+          <span class="spinner"></span>
+          Uploading...
+        </span>
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="isLoading">
+        Cancel
+      </button>
+    </div>
+  </form>
+</div>

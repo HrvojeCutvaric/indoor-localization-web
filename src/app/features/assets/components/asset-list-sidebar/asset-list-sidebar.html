@@ -1,0 +1,40 @@
+<div class="sidebar-container">
+  <div class="sidebar-header">
+    <h3>Assets</h3>
+    <!-- refresh button removed intentionally -->
+  </div>
+
+  <div class="action-buttons">
+    <button class="btn btn-action" (click)="onAddAsset()">
+      Add asset
+    </button>
+    <button class="btn btn-action" (click)="onEditAsset()" [disabled]="!selectedAsset">
+      Edit asset
+    </button>
+    <button class="btn btn-action btn-delete" (click)="onDeleteAsset()" [disabled]="!selectedAsset">
+      Delete asset
+    </button>
+  </div>
+
+  <div class="asset-list">
+    <div class="loading-state" *ngIf="loading">
+      <span class="spinner"></span>
+      <p>Loading assets...</p>
+    </div>
+
+    <div class="empty-state" *ngIf="!loading && assets.length === 0">
+      <p>No assets found.</p>
+    </div>
+
+    <ul class="assets" *ngIf="!loading && assets.length > 0">
+      <li 
+        *ngFor="let asset of assets" 
+        class="asset-item"
+        [class.selected]="selectedAsset?.id === asset.id"
+        (click)="onSelectAsset(asset)"
+      >
+        {{ asset.name }}
+      </li>
+    </ul>
+  </div>
+</div>

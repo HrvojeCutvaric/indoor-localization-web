@@ -31,6 +31,10 @@
             ],
             "styles": [
               "src/styles.scss"
+            ],
+            "allowedCommonJsDependencies": [
+              "mqtt-browser",
+              "ngx-mqtt"
             ]
           },
           "configurations": {
@@ -38,8 +42,8 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "1MB"
+                  "maximumWarning": "700kB",
+                  "maximumError": "1.5MB"
                 },
                 {
                   "type": "anyComponentStyle",
@@ -64,7 +68,8 @@
               "buildTarget": "indoor-localization:build:production"
             },
             "development": {
-              "buildTarget": "indoor-localization:build:development"
+              "buildTarget": "indoor-localization:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"
@@ -94,5 +99,8 @@
         }
       }
     }
+  },
+  "cli": {
+    "analytics": false
   }
 }

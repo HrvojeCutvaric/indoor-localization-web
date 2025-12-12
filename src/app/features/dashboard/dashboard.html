@@ -1,0 +1,57 @@
+<div class="dashboard-container">
+    <header class="dashboard-header">
+        <div class="header-left">
+            <h1 class="dashboard-title">Dashboard</h1>
+
+            <nav class="main-nav">
+                <button class="nav-link" [class.is-active]="activeSection === 'maps'"
+                    (click)="setActiveSection('maps')">
+                    Maps
+                </button>
+
+                <button class="nav-link" [class.is-active]="activeSection === 'assets'"
+                    (click)="setActiveSection('assets')">
+                    Assets
+                </button>
+
+                <button class="nav-link" [class.is-active]="activeSection === 'zones'"
+                    (click)="setActiveSection('zones')">
+                    Zones
+                </button>
+
+                <button class="nav-link" [class.is-active]="activeSection === 'reports'"
+                    (click)="setActiveSection('reports')">
+                    Reports
+                </button>
+            </nav>
+        </div>
+
+        <button (click)="logout()" class="logout-btn">Logout</button>
+    </header>
+
+    <div class="success-banner" *ngIf="successMessage">
+        {{ successMessage }}
+    </div>
+
+    <main class="dashboard-content">
+        <section *ngIf="activeSection === 'maps'" class="section section-maps">
+            <h2>Maps</h2>
+            <app-map-canvas></app-map-canvas>
+        </section>
+
+        <section *ngIf="activeSection === 'assets'" class="section section-assets">
+            <h2>Assets</h2>
+            <app-asset-management></app-asset-management>
+        </section>
+
+        <section *ngIf="activeSection === 'zones'" class="section section-zones">
+            <h2>Zones</h2>
+            <p>Zones module will be available soon.</p>
+        </section>
+
+        <section *ngIf="activeSection === 'reports'" class="section section-reports">
+            <h2>Reports</h2>
+            <p>Reports module will be available soon.</p>
+        </section>
+    </main>
+</div>

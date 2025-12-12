@@ -1,0 +1,21 @@
+<header class="map-card__header">
+    <div class="header-content">
+        <h2 class="map-card__title">Floormap</h2>
+    </div>
+    <div class="header-actions">
+        <div class="zoom-controls">
+            <button class="zoom-btn" (click)="zoomOut()" title="Zoom Out" [disabled]="!imageLoaded">−</button>
+            <button class="zoom-btn" (click)="zoomIn()" title="Zoom In" [disabled]="!imageLoaded">+</button>
+        </div>
+        <button class="btn-go-to-maps" (click)="goToMaps()" title="Go to Maps">📋 Go to Maps</button>
+    </div>
+</header>
+
+<div class="map-card__content">
+    <div class="map-canvas-wrapper">
+        <div *ngIf="!mapImagePath" class="no-map-message">
+            <p>No floor map selected. Go to Maps to select one.</p>
+        </div>
+        <canvas #mapCanvas *ngIf="mapImagePath"></canvas>
+    </div>
+</div>

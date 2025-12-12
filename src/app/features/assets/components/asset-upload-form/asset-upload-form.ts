@@ -31,8 +31,6 @@ export class AssetUploadForm implements OnInit, OnDestroy {
 
   form = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(1)]],
-    x: [0, [Validators.required]],
-    y: [0, [Validators.required]],
     floorMapId: [0, [Validators.required]],
     active: [true, [Validators.required]],
     color: ['#000000', [Validators.required]],
@@ -63,8 +61,6 @@ export class AssetUploadForm implements OnInit, OnDestroy {
           if (this.isEditMode && this.asset) {
             this.form.patchValue({
               name: this.asset.name,
-              x: this.asset.x ?? 0,
-              y: this.asset.y ?? 0,
               floorMapId: this.asset.floorMapId,
               active: this.asset.active ?? true,
               color: this.asset.color ?? '#000000',
@@ -105,8 +101,8 @@ export class AssetUploadForm implements OnInit, OnDestroy {
     const asset: Asset = {
       id: Number(this.asset?.id ?? Date.now()),
       name: this.form.get('name')?.value || '',
-      x: Number(this.form.get('x')?.value ?? 0),
-      y: Number(this.form.get('y')?.value ?? 0),
+      x: null as any,
+      y: null as any,
       floorMapId: Number(this.form.get('floorMapId')?.value ?? 0),
       active: !!this.form.get('active')?.value,
       color: this.form.get('color')?.value || '#000000',

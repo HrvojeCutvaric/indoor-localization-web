@@ -17,6 +17,8 @@ import { Asset } from '../../../../features/assets/asset.model';
 import { Subject, Subscription } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { AppMqttService } from '../../../../core/services/mqtt.service';
+import { ZonesService } from '../../../../features/zones/zones.service';
+import type { DraftPoint, Zone } from '../../../../features/zones/zone.model';
 
 @Component({
   selector: 'app-map-canvas',
@@ -36,12 +38,16 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
   private cdr = inject(ChangeDetectorRef);
   private destroy$ = new Subject<void>();
   private assetService = inject(AssetService);
+  private zonesService = inject(ZonesService);
   private mqttService = inject(AppMqttService);
   private assets: Asset[] = [];
   private assetUpdateSubscription?: Subscription;
   private image!: HTMLImageElement;
   imageLoaded = false;
   mapImagePath: string = '';
+
+  private zones: Zone[] = [];
+  private draftPoints: DraftPoint[] = [];
 
   // Animation properties
   private assetAnimationStates: Record<number, { currentX: number; currentY: number; targetX: number; targetY: number }> = {};
@@ -114,14 +120,29 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
           setTimeout(() => {
             this.loadImageIfCanvasReady();
           }, 0);
-          
+
           // Start live asset updates for this floor map
           this.startAssetUpdates();
+          this.zonesService.setMap(map.id);
         } else {
           // No map selected, stop asset updates
           this.stopAssetUpdates();
           this.assets = [];
         }
+      });
+
+    this.zonesService.zones$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(z => {
+        this.zones = z;
+        this.draw();
+      });
+
+    this.zonesService.draftPoints$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(p => {
+        this.draftPoints = p;
+        this.draw();
       });
   }
 
@@ -137,7 +158,7 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private startAssetUpdates(): void {
     this.stopAssetUpdates(); // Clean up any existing subscription
-    
+
     const selectedMap = this.mapService.getSelectedMap();
     if (!selectedMap) return;
 
@@ -181,7 +202,7 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
           }
 
           this.assets = filteredAssets;
-          
+
           // Start animation loop if not already running
           if (!this.animationFrameId) {
             this.startAnimationLoop();
@@ -204,7 +225,7 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
         const state = this.assetAnimationStates[assetId];
         // Smoothly interpolate towards target position
         const distance = Math.sqrt(
-          Math.pow(state.targetX - state.currentX, 2) + 
+          Math.pow(state.targetX - state.currentX, 2) +
           Math.pow(state.targetY - state.currentY, 2)
         );
 
@@ -327,7 +348,7 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
     } else {
       const aspectRatio = this.image.width / this.image.height;
       const baseMeters = 40;
-      
+
       if (aspectRatio >= 1) {
         this.floorWidthMeters = baseMeters;
         this.floorHeightMeters = baseMeters / aspectRatio;
@@ -363,6 +384,8 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.drawCoordinateSystem();
     this.drawAssets();
+    this.drawZones();
+    this.drawDraftPolygon();
   }
 
   private drawCoordinateSystem(): void {
@@ -428,29 +451,29 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Draw each asset as a colored circle with label
     this.assets.forEach(asset => {
-      if (asset.x !== null && asset.x !== undefined && 
-          asset.y !== null && asset.y !== undefined) {
-        
+      if (asset.x !== null && asset.x !== undefined &&
+        asset.y !== null && asset.y !== undefined) {
+
         // Get interpolated position from animation state
         const animState = this.assetAnimationStates[asset.id];
         const displayX = animState ? animState.currentX : asset.x;
         const displayY = animState ? animState.currentY : asset.y;
-        
+
         // Convert meters to pixels
         const pixelX = displayX * this.pxPerMeterX;
         const pixelY = this.image.height - (displayY * this.pxPerMeterY); // Flip Y coordinate
-        
+
         // Draw asset circle
         ctx.beginPath();
         ctx.arc(pixelX, pixelY, 8 / this.scale, 0, 2 * Math.PI);
         ctx.fillStyle = asset.color || '#FF0000';
         ctx.fill();
-        
+
         // Draw border
         ctx.strokeStyle = '#FFFFFF';
         ctx.lineWidth = 2 / this.scale;
         ctx.stroke();
-        
+
         // Draw asset name
         ctx.fillStyle = '#000000';
         ctx.font = `${12 / this.scale}px Arial`;
@@ -567,5 +590,98 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
   zoomOut(): void {
     this.scale = Math.max(this.minScale, this.scale / 1.1);
     this.draw();
+  }
+
+  private metersToPixels(x: number, y: number): { px: number; py: number } {
+    const px = x * this.pxPerMeterX;
+    const py = this.image.height - (y * this.pxPerMeterY); // flip Y
+    return { px, py };
+  }
+
+  private drawZones(): void {
+    if (!this.imageLoaded || !this.zones?.length) return;
+
+    const ctx = this.ctx;
+    ctx.save();
+
+    ctx.lineWidth = 2 / this.scale;
+    ctx.strokeStyle = '#00A3FF';
+    ctx.fillStyle = 'rgba(0, 163, 255, 0.15)';
+
+    for (const zone of this.zones) {
+      if (!zone.points?.length) continue;
+
+      ctx.beginPath();
+      zone.points.forEach((p, idx) => {
+        const { px, py } = this.metersToPixels(p.x, p.y);
+        if (idx === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      });
+
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
+  private drawDraftPolygon(): void {
+    if (!this.imageLoaded || !this.draftPoints?.length) return;
+
+    const ctx = this.ctx;
+    ctx.save();
+
+    ctx.lineWidth = 2 / this.scale;
+    ctx.strokeStyle = '#FF9900';
+    ctx.fillStyle = 'rgba(255, 153, 0, 0.12)';
+
+    ctx.beginPath();
+    this.draftPoints.forEach((p, idx) => {
+      const { px, py } = this.metersToPixels(p.x, p.y);
+      if (idx === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    });
+
+    if (this.draftPoints.length >= 3) {
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    ctx.stroke();
+
+    // vertex dots
+    ctx.fillStyle = '#FF9900';
+    for (const p of this.draftPoints) {
+      const { px, py } = this.metersToPixels(p.x, p.y);
+      ctx.beginPath();
+      ctx.arc(px, py, 4 / this.scale, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  public screenPointToMeters(clientX: number, clientY: number): { x: number; y: number } | null {
+    if (!this.imageLoaded) return null;
+
+    const rect = this.canvasRef.nativeElement.getBoundingClientRect();
+
+    const canvasX = clientX - rect.left;
+    const canvasY = clientY - rect.top;
+
+    // invert setTransform(scale, 0, 0, scale, offsetX, offsetY)
+    const imgX = (canvasX - this.offsetX) / this.scale;
+    const imgY = (canvasY - this.offsetY) / this.scale;
+
+    // ignore clicks outside image bounds
+    if (imgX < 0 || imgY < 0 || imgX > this.image.width || imgY > this.image.height) {
+      return null;
+    }
+
+    const xMeters = imgX / this.pxPerMeterX;
+    const yMeters = (this.image.height - imgY) / this.pxPerMeterY;
+
+    return { x: xMeters, y: yMeters };
   }
 }

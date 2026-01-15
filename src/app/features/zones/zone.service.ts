@@ -35,10 +35,12 @@ export class ZoneService {
   createZone(floorMapId: string, name: string, description: string = ''): Zone {
     const zone: Zone = {
       id: `zone_${Date.now()}`,
+      mapId: floorMapId,
       name,
       description,
       floorMapId,
       polygons: [],
+      points: [],
       createdAt: Date.now(),
     };
 
@@ -81,7 +83,7 @@ export class ZoneService {
     for (const zones of this.zones.values()) {
       const zone = zones.find(z => z.id === zoneId);
       if (zone) {
-        zone.polygons = zone.polygons.filter(p => p.id !== polygonId);
+        zone.polygons = zone.polygons.filter((p: Polygon) => p.id !== polygonId);
         if (this.selectedZoneSubject.value?.id === zoneId) {
           this.selectedZoneSubject.next({ ...zone });
         }

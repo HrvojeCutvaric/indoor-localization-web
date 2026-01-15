@@ -117,7 +117,7 @@ export class ZonesManagementComponent implements OnInit, OnDestroy {
   onPolygonRemoved(polygonId: string): void {
     if (this.selectedZone) {
       this.zoneService.removePolygonFromZone(this.selectedZone.id, polygonId);
-      this.selectedZone.polygons = this.selectedZone.polygons.filter(p => p.id !== polygonId);
+      this.selectedZone.polygons = this.selectedZone.polygons.filter((p: Polygon) => p.id !== polygonId);
     }
   }
 

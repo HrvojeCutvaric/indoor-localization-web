@@ -1,0 +1,44 @@
+<div class="canvas-container">
+    <div class="canvas-header">
+        <div class="header-left">
+            <h3>Polygon Drawing Canvas</h3>
+        </div>
+        <div class="header-controls">
+            <button 
+                class="btn-control" 
+                [class.active]="isDrawingMode"
+                (click)="toggleDrawingMode()"
+                title="Toggle Drawing Mode">
+                ✏️ Draw
+            </button>
+            <button 
+                class="btn-control"
+                (click)="undoLastPolygon()"
+                [disabled]="getPolygons().length === 0"
+                title="Undo Last Polygon">
+                ↶ Undo
+            </button>
+            <button 
+                class="btn-control"
+                (click)="clearAllPolygons()"
+                [disabled]="getPolygons().length === 0 && currentPoints.length === 0"
+                title="Clear All Polygons">
+                🗑️ Clear
+            </button>
+            <div class="zoom-controls">
+                <button class="zoom-btn" (click)="zoomOut()" title="Zoom Out">−</button>
+                <button class="zoom-btn" (click)="zoomIn()" title="Zoom In">+</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="canvas-wrapper">
+        <canvas #polygonCanvas></canvas>
+    </div>
+
+    <div class="canvas-footer">
+        <div class="polygon-count">
+            <span>Polygons: {{ getPolygons().length }}</span>
+        </div>
+    </div>
+</div>

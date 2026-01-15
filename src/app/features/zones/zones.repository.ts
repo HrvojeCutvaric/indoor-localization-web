@@ -26,12 +26,14 @@ export class LocalZonesRepository {
         const zone: Zone = {
             id: crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`,
             mapId,
+            floorMapId: mapId,
             name,
             points: points.map((p, idx) => ({
                 x: p.x,
                 y: p.y,
                 ordinalNumber: idx + 1,
             })),
+            polygons: [],
         };
 
         zones.push(zone);

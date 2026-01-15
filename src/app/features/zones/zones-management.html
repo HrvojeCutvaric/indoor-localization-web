@@ -4,67 +4,64 @@
         <button class="btn-back" (click)="goToMaps()" title="Go to Maps">← Back to Maps</button>
     </div>
 
-    <div class="zones-container">
-        <!-- Left sidebar: Zones list -->
-        <div class="zones-sidebar">
-            <div class="sidebar-header">
-                <h3>Zones</h3>
-                <button class="btn-add-zone" (click)="showZoneForm = !showZoneForm">+ New Zone</button>
-            </div>
+    <div class="zones-tabs">
+        <button class="zones-tab" type="button" [class.active]="activeTab === 'zones'" (click)="setActiveTab('zones')">
+            Zones
+        </button>
 
-            <!-- Zone creation form -->
-            <div class="zone-form" *ngIf="showZoneForm">
-                <input 
-                    type="text" 
-                    placeholder="Zone name" 
-                    [(ngModel)]="newZoneName"
-                    class="input-field">
-                <textarea 
-                    placeholder="Description (optional)" 
-                    [(ngModel)]="newZoneDescription"
-                    class="textarea-field"></textarea>
-                <div class="form-actions">
-                    <button class="btn-primary" (click)="createZone()">Create</button>
-                    <button class="btn-secondary" (click)="showZoneForm = false">Cancel</button>
+        <button class="zones-tab" type="button" [class.active]="activeTab === 'logs'" (click)="setActiveTab('logs')">
+            Zone logs
+        </button>
+    </div>
+
+    <div *ngIf="activeTab === 'zones'">
+        <div class="zones-container">
+            <div class="zones-sidebar">
+                <div class="sidebar-header">
+                    <h3>Zones</h3>
+                    <button class="btn-add-zone" (click)="showZoneForm = !showZoneForm">+ New Zone</button>
                 </div>
-            </div>
 
-            <!-- Zones list -->
-            <div class="zones-list">
-                <div 
-                    *ngFor="let zone of zones" 
-                    class="zone-item" 
-                    [class.active]="selectedZone?.id === zone.id"
-                    (click)="selectZone(zone)">
-                    <div class="zone-item-header">
-                        <h4>{{ zone.name }}</h4>
-                        <button 
-                            class="btn-delete-zone"
-                            (click)="deleteZone(zone.id); $event.stopPropagation()"
-                            title="Delete zone">
-                            ✕
-                        </button>
+                <div class="zone-form" *ngIf="showZoneForm">
+                    <input type="text" placeholder="Zone name" [(ngModel)]="newZoneName" class="input-field" />
+                    <textarea placeholder="Description (optional)" [(ngModel)]="newZoneDescription"
+                        class="textarea-field"></textarea>
+                    <div class="form-actions">
+                        <button class="btn-primary" (click)="createZone()">Create</button>
+                        <button class="btn-secondary" (click)="showZoneForm = false">Cancel</button>
                     </div>
-                    <p class="zone-description" *ngIf="zone.description">{{ zone.description }}</p>
-                    <span class="zone-polygon-count">{{ zone.polygons.length }} polygon(s)</span>
+                </div>
+
+                <div class="zones-list">
+                    <div *ngFor="let zone of zones" class="zone-item" [class.active]="selectedZone?.id === zone.id"
+                        (click)="selectZone(zone)">
+                        <div class="zone-item-header">
+                            <h4>{{ zone.name }}</h4>
+                            <button class="btn-delete-zone" (click)="deleteZone(zone.id); $event.stopPropagation()"
+                                title="Delete zone">
+                                ✕
+                            </button>
+                        </div>
+                        <p class="zone-description" *ngIf="zone.description">{{ zone.description }}</p>
+                        <span class="zone-polygon-count">{{ zone.polygons.length }} polygon(s)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="canvas-area">
+                <app-polygon-canvas *ngIf="selectedZone" [zone]="selectedZone" [mapImagePath]="mapImagePath"
+                    [imageLoaded]="imageLoaded" (polygonCreated)="onPolygonCreated($event)"
+                    (polygonRemoved)="onPolygonRemoved($event)">
+                </app-polygon-canvas>
+
+                <div *ngIf="!selectedZone" class="empty-state">
+                    <p>Select or create a zone to start drawing polygons</p>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Right area: Canvas and polygon drawing -->
-        <div class="canvas-area">
-            <app-polygon-canvas
-                *ngIf="selectedZone"
-                [zone]="selectedZone"
-                [mapImagePath]="mapImagePath"
-                [imageLoaded]="imageLoaded"
-                (polygonCreated)="onPolygonCreated($event)"
-                (polygonRemoved)="onPolygonRemoved($event)">
-            </app-polygon-canvas>
-
-            <div *ngIf="!selectedZone" class="empty-state">
-                <p>Select or create a zone to start drawing polygons</p>
-            </div>
-        </div>
+    <div *ngIf="activeTab === 'logs'" class="zone-logs-wrapper">
+        <app-zone-entry-exit-log [mapId]="selectedMapId" [mapName]="selectedMapName"></app-zone-entry-exit-log>
     </div>
 </div>

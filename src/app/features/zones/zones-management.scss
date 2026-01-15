@@ -50,6 +50,35 @@
   }
 }
 
+.zones-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px 0 16px;
+  flex-wrap: wrap;
+}
+
+.zones-tab {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #f3f4f6;
+  }
+
+  &.active {
+    border-color: #2196f3;
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.12);
+    color: #111827;
+  }
+}
+
 .zones-container {
   display: flex;
   flex: 1;
@@ -58,7 +87,6 @@
   overflow: hidden;
 }
 
-// Left sidebar with zones list
 .zones-sidebar {
   width: 280px;
   background: #ffffff;
@@ -276,7 +304,12 @@
   padding: 24px;
 }
 
-// Scrollbar styling
+.zone-logs-wrapper {
+  flex: 1;
+  padding: 16px;
+  overflow: auto;
+}
+
 .zones-list {
   &::-webkit-scrollbar {
     width: 6px;
@@ -296,7 +329,6 @@
   }
 }
 
-// Responsive design
 @media (max-width: 1024px) {
   .zones-container {
     gap: 12px;

@@ -1,0 +1,74 @@
+<div class="log-header">
+    <h3>Zone logs</h3>
+    <div class="meta" *ngIf="mapName">Floormap: {{ mapName }}</div>
+</div>
+
+<!-- Filter bar (UI-only placeholder) -->
+<div class="filters" *ngIf="!loading && !error">
+    <input class="filter" type="text" placeholder="Filter by asset…" disabled />
+    <input class="filter" type="text" placeholder="Filter by zone…" disabled />
+
+    <select class="filter" disabled>
+        <option>All types</option>
+        <option>ENTRY</option>
+        <option>EXIT</option>
+    </select>
+
+    <button class="btn" type="button" disabled>Apply</button>
+</div>
+
+<div class="state" *ngIf="loading">
+    Loading logs...
+</div>
+
+<div class="state error" *ngIf="!loading && error">
+    <div>{{ error }}</div>
+    <button type="button" class="btn" (click)="retry()">Retry</button>
+</div>
+
+<div class="state" *ngIf="!loading && !error && logs.length === 0">
+    No entry/exit events yet.
+</div>
+
+<div class="table-wrap" *ngIf="!loading && !error && logs.length > 0">
+    <table class="log-table">
+        <thead>
+            <tr>
+                <th>Asset</th>
+                <th>Zone</th>
+                <th>Type</th>
+                <th>Timestamp</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            <tr *ngFor="let e of logs; trackBy: trackById">
+                <td>
+                    <div class="main">{{ e.assetName || e.assetId }}</div>
+                    <div class="sub">{{ e.assetId }}</div>
+                </td>
+
+                <td>
+                    <div class="main">{{ e.zoneName || e.zoneId }}</div>
+                    <div class="sub">{{ e.zoneId }}</div>
+                </td>
+
+                <td>
+                    <span class="badge" [class.entry]="e.eventType === 'ENTRY'" [class.exit]="e.eventType === 'EXIT'">
+                        {{ e.eventType }}
+                    </span>
+                </td>
+
+                <td class="mono">
+                    {{ e.timestamp | date:'dd.MM.yyyy HH:mm:ss' }}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="footer" *ngIf="!loading && !error">
+    <button class="btn" type="button" disabled>
+        Load more
+    </button>
+</div>

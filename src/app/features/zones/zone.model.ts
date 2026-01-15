@@ -1,21 +1,18 @@
-export interface Point {
-  x: number;
-  y: number;
-}
+export type ZonePoint = {
+    x: number;
+    y: number;
+    ordinalNumber: number;
+};
 
-export interface Polygon {
-  id: string;
-  points: Point[];
-  name?: string;
-  color?: string;
-  createdAt: number;
-}
+export type Zone = {
+    id: string;
+    mapId: string;
+    name: string;
+    points: ZonePoint[];
+};
 
-export interface Zone {
-  id: string;
-  name: string;
-  description?: string;
-  floorMapId: string;
-  polygons: Polygon[];
-  createdAt: number;
-}
+export type DraftPoint = { x: number; y: number };
+
+export type ZoneValidationError =
+    | 'NOT_ENOUGH_POINTS'
+    | 'SELF_INTERSECTS';

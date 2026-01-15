@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { MapService } from '../../core/services/map.service';
 import { ZoneService } from './zone.service';
 import { PolygonCanvasComponent } from './components/polygon-canvas/polygon-canvas';
+import { ZoneEntryExitLogComponent } from './components/zone-entry-exit-log/zone-entry-exit-log';
 import { Zone, Polygon } from './zone.model';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -12,7 +13,7 @@ import { takeUntil } from 'rxjs/operators';
 @Component({
   selector: 'app-zones-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, PolygonCanvasComponent],
+  imports: [CommonModule, FormsModule, PolygonCanvasComponent, ZoneEntryExitLogComponent],
   templateUrl: './zones-management.html',
   styleUrls: ['./zones-management.scss'],
 })
@@ -24,6 +25,7 @@ export class ZonesManagementComponent implements OnInit, OnDestroy {
 
   zones: Zone[] = [];
   selectedZone: Zone | null = null;
+  selectedMapName: string | null = null;
   mapImagePath: string = '';
   imageLoaded: boolean = false;
   showZoneForm = false;
@@ -31,6 +33,13 @@ export class ZonesManagementComponent implements OnInit, OnDestroy {
   newZoneDescription = '';
 
   selectedMap = this.mapService.getSelectedMap();
+
+  activeTab: 'zones' | 'logs' = 'zones';
+  setActiveTab(tab: 'zones' | 'logs') {
+    this.activeTab = tab;
+  }
+
+  selectedMapId: string | null = null;
 
   ngOnInit(): void {
     const selectedMap = this.mapService.getSelectedMap();
@@ -40,6 +49,9 @@ export class ZonesManagementComponent implements OnInit, OnDestroy {
     }
 
     this.selectedMap = selectedMap;
+    this.selectedMapId = selectedMap.id;
+    this.selectedMapName = selectedMap.name;
+
     this.mapImagePath = this.mapService.getFullImageUrl(selectedMap.image);
     this.imageLoaded = true;
 
@@ -50,6 +62,9 @@ export class ZonesManagementComponent implements OnInit, OnDestroy {
       .subscribe(map => {
         if (map && map.image) {
           this.selectedMap = map;
+          this.selectedMapId = map.id;
+          this.selectedMapName = map.name;
+
           this.mapImagePath = this.mapService.getFullImageUrl(map.image);
           this.loadZones();
         } else {

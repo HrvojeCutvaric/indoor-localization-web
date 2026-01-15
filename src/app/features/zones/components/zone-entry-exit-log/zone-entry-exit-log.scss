@@ -1,0 +1,157 @@
+.log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 12px 0;
+
+    h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .meta {
+        font-size: 12px;
+        color: #6b7280;
+    }
+}
+
+.filters {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin: 8px 0 12px 0;
+}
+
+.filter {
+    padding: 8px 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #ffffff;
+    min-width: 180px;
+    font-size: 13px;
+    color: #374151;
+
+    &:disabled {
+        background: #f9fafb;
+        color: #9ca3af;
+        cursor: not-allowed;
+    }
+}
+
+.state {
+    padding: 16px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    color: #374151;
+
+    &.error {
+        border-color: #fca5a5;
+    }
+}
+
+.btn {
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    cursor: pointer;
+
+    &:hover {
+        background: #f3f4f6;
+    }
+
+    &:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+}
+
+.table-wrap {
+    width: 100%;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: auto;
+}
+
+.log-table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th,
+    td {
+        padding: 12px;
+        border-bottom: 1px solid #e5e7eb;
+        text-align: left;
+        vertical-align: top;
+    }
+
+    th {
+        font-size: 12px;
+        color: #6b7280;
+        font-weight: 700;
+        background: #f9fafb;
+
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+
+    .main {
+        font-weight: 600;
+        color: #111827;
+    }
+
+    .sub {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 2px;
+    }
+
+    .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+            'Courier New', monospace;
+        font-size: 12px;
+        color: #374151;
+        white-space: nowrap;
+    }
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 800;
+    border: 1px solid transparent;
+
+    &.entry {
+        background: rgba(16, 185, 129, 0.12);
+        border-color: rgba(16, 185, 129, 0.35);
+        color: #065f46;
+    }
+
+    &.exit {
+        background: rgba(239, 68, 68, 0.12);
+        border-color: rgba(239, 68, 68, 0.35);
+        color: #7f1d1d;
+    }
+}
+
+@media (max-width: 640px) {
+    .filter {
+        min-width: 140px;
+        flex: 1;
+    }
+}
+
+.footer {
+    display: flex;
+    justify-content: center;
+    margin-top: 12px;
+}

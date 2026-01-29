@@ -12,9 +12,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     const accessToken = authService.getAccessToken();
 
     const isAuthRequest =
-        req.url.endsWith('/login') ||
-        req.url.endsWith('/register') ||
-        req.url.endsWith('/refresh');
+        req.url.includes('/Auth/login') ||
+        req.url.includes('/Auth/register') ||
+        req.url.includes('/Auth/refresh');
 
     let authReq = req;
     if (accessToken && !isAuthRequest) {
@@ -31,16 +31,21 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
                 return throwError(() => error);
             }
 
+            const hasRefresh = !!authService.getRefreshToken();
+            if (!hasRefresh) {
+                // No refresh token available; propagate error and let UI decide.
+                return throwError(() => error);
+            }
+
             return authService.refreshTokens().pipe(
                 switchMap((success) => {
                     if (!success) {
-                        authService.logoutAndRedirectToLogin();
+                        // Refresh failed; propagate error, do not force logout.
                         return throwError(() => error);
                     }
 
                     const newAccessToken = authService.getAccessToken();
                     if (!newAccessToken) {
-                        authService.logoutAndRedirectToLogin();
                         return throwError(() => error);
                     }
 
@@ -53,7 +58,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
                     return next(retryReq);
                 }),
                 catchError((refreshError) => {
-                    authService.logoutAndRedirectToLogin();
+                    // Refresh flow threw; propagate to caller.
                     return throwError(() => refreshError);
                 }),
             );

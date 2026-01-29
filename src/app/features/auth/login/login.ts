@@ -37,10 +37,9 @@ export class Login implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    if (this.authService.isAuthenticated()) {
-      this.router.navigate(['/dashboard']);
-      return;
-    }
+    // Clear any stale tokens when landing on login page
+    // This prevents issues with expired tokens from previous sessions
+    this.authService.clearTokens();
 
     this.route.queryParamMap
       .pipe(takeUntil(this.destroy$))

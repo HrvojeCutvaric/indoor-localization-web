@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MapService } from '../../core/services/map.service';
-import { ZoneService } from './zone.service';
+import { ZonesService } from './zones.service';
 import { PolygonCanvasComponent } from './components/polygon-canvas/polygon-canvas';
 import { ZoneEntryExitLogComponent } from './components/zone-entry-exit-log/zone-entry-exit-log';
 import { Zone, Polygon } from './zone.model';
@@ -20,7 +20,7 @@ import { takeUntil } from 'rxjs/operators';
 export class ZonesManagementComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private mapService = inject(MapService);
-  private zoneService = inject(ZoneService);
+  private zoneService = inject(ZonesService);
   private destroy$ = new Subject<void>();
 
   zones: Zone[] = [];
@@ -54,6 +54,16 @@ export class ZonesManagementComponent implements OnInit, OnDestroy {
 
     this.mapImagePath = this.mapService.getFullImageUrl(selectedMap.image);
     this.imageLoaded = true;
+
+    // Initialize zones service with the map
+    this.zoneService.setMap(selectedMap.id);
+
+    // Subscribe to zones from service (authoritative source from backend)
+    this.zoneService.zones$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(zones => {
+        this.zones = zones;
+      });
 
     this.loadZones();
 
@@ -93,16 +103,24 @@ export class ZonesManagementComponent implements OnInit, OnDestroy {
   }
 
   createZone(): void {
-    if (!this.newZoneName.trim() || !this.selectedMap) return;
+    console.log('createZone called');
+    console.log('newZoneName:', this.newZoneName);
+    console.log('selectedMap:', this.selectedMap);
+    
+    if (!this.newZoneName.trim() || !this.selectedMap) {
+      console.warn('Zone creation aborted: missing name or map');
+      return;
+    }
 
-    const zone = this.zoneService.createZone(
+    console.log('Creating zone with name:', this.newZoneName);
+    // Call service which will post to backend and reload zones from service subscription
+    this.zoneService.createZone(
       this.selectedMap.id,
       this.newZoneName,
       this.newZoneDescription
     );
 
-    this.zones.push(zone);
-    this.selectZone(zone);
+    // Clear form - zones will be updated from service subscription
     this.newZoneName = '';
     this.newZoneDescription = '';
     this.showZoneForm = false;

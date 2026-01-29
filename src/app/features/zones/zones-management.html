@@ -43,7 +43,7 @@
                             </button>
                         </div>
                         <p class="zone-description" *ngIf="zone.description">{{ zone.description }}</p>
-                        <span class="zone-polygon-count">{{ zone.polygons.length }} polygon(s)</span>
+                        <span class="zone-polygon-count">{{ zone.polygons.length || 0 }} polygon(s)</span>
                     </div>
                 </div>
             </div>

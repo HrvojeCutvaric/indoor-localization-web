@@ -60,7 +60,9 @@ export class AuthService {
     }
 
     isAuthenticated(): boolean {
-        return !!this.getAccessToken() && !!this.getRefreshToken();
+        // Consider authenticated if we have an access token.
+        // Refresh token may be optional depending on backend implementation.
+        return !!this.getAccessToken();
     }
 
     login(username: string, password: string): Observable<LoginResponse> {
@@ -73,7 +75,23 @@ export class AuthService {
 
         return this.http.post<LoginResponse>(url, body).pipe(
             tap((response) => {
-                this.setTokens(response.accessToken, response.refreshToken);
+                // Support multiple possible response shapes from backend
+                const anyResp = response as any;
+                
+                // Handle nested data structure: { data: { accessToken, refreshToken } }
+                const dataObj = anyResp.data || anyResp;
+                const accessToken: string | undefined = dataObj.accessToken || dataObj.token || dataObj.access_token;
+                const refreshToken: string | undefined = dataObj.refreshToken || dataObj.refresh_token;
+
+                if (accessToken) {
+                    if (refreshToken) {
+                        this.setTokens(accessToken, refreshToken);
+                    } else {
+                        // Store access token and clear any stale refresh token
+                        localStorage.setItem(this.ACCESS_TOKEN_KEY, accessToken);
+                        localStorage.removeItem(this.REFRESH_TOKEN_KEY);
+                    }
+                }
             }),
             catchError((error: HttpErrorResponse) => {
                 const authError: AuthError = {

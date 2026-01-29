@@ -143,15 +143,177 @@
     }
 }
 
+// ─────────────────────────────────────────────────────────────
+// Loading spinner
+// ─────────────────────────────────────────────────────────────
+.loading-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #e5e7eb;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 10px;
+    display: inline-block;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    text-align: center;
+
+    .error-icon,
+    .empty-icon {
+        font-size: 32px;
+    }
+
+    .error-message {
+        font-weight: 500;
+        color: #dc2626;
+    }
+
+    .empty-hint {
+        font-size: 13px;
+        color: #6b7280;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Results summary
+// ─────────────────────────────────────────────────────────────
+.results-summary {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 8px;
+    padding: 4px 0;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Button variants
+// ─────────────────────────────────────────────────────────────
+.btn-primary {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: #ffffff;
+
+    &:hover:not(:disabled) {
+        background: #2563eb;
+        border-color: #2563eb;
+    }
+}
+
+.btn-secondary {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+    color: #374151;
+
+    &:hover:not(:disabled) {
+        background: #e5e7eb;
+    }
+}
+
+.link-btn {
+    background: none;
+    border: none;
+    color: #3b82f6;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+    font-size: inherit;
+
+    &:hover {
+        color: #2563eb;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Date filter
+// ─────────────────────────────────────────────────────────────
+.date-filter {
+    min-width: 200px;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Table enhancements
+// ─────────────────────────────────────────────────────────────
+.still-inside {
+    color: #059669;
+    font-weight: 600;
+    font-style: italic;
+}
+
+.ongoing {
+    color: #9ca3af;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Pagination
+// ─────────────────────────────────────────────────────────────
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 12px;
+    background: #f9fafb;
+    border-radius: 8px;
+    flex-wrap: wrap;
+}
+
+.page-numbers {
+    display: flex;
+    gap: 4px;
+}
+
+.btn-pagination {
+    min-width: 70px;
+}
+
+.btn-page {
+    min-width: 36px;
+    padding: 8px 12px;
+
+    &.active {
+        background: #3b82f6;
+        border-color: #3b82f6;
+        color: #ffffff;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Responsive
+// ─────────────────────────────────────────────────────────────
 @media (max-width: 640px) {
     .filter {
         min-width: 140px;
         flex: 1;
     }
-}
 
-.footer {
-    display: flex;
-    justify-content: center;
-    margin-top: 12px;
+    .date-filter {
+        min-width: 100%;
+    }
+
+    .pagination {
+        gap: 6px;
+    }
+
+    .btn-pagination {
+        min-width: 60px;
+        font-size: 12px;
+    }
+
+    .btn-page {
+        min-width: 32px;
+        padding: 6px 10px;
+    }
 }

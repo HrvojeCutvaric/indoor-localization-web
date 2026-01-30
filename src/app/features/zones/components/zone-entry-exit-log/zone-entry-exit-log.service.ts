@@ -105,33 +105,21 @@ export class ZoneEntryExitLogService implements OnDestroy {
 
         // Get all assets for this floor map
         this.http
-            .get<any>(`${this.assetApiUrl}/floormap/${this.floorMapId}`)
+            .get<any[]>(`${this.assetApiUrl}/floormap/${this.floorMapId}`)
             .pipe(
-                map((response) => Array.isArray(response.data) ? response.data : response),
-                switchMap((assets: any[]) => {
-                    console.log('Assets loaded:', assets);
+                switchMap((assets) => {
                     if (assets.length === 0) {
-                        console.log('No assets found');
                         return of([]);
                     }
 
                     // Get zone history for all assets
-                    const historyRequests = assets.map((asset: any) =>
+                    const historyRequests = assets.map((asset) =>
                         this.http
-                            .get<any>(`${this.assetApiUrl}/${asset.id}/history/zones`)
-                            .pipe(
-                                map((historyResponse) => {
-                                    console.log('History response for asset', asset.id, ':', historyResponse);
-                                    return Array.isArray(historyResponse.data) ? historyResponse.data : historyResponse;
-                                }),
-                                catchError((err) => {
-                                    console.error('Error fetching history for asset', asset.id, ':', err);
-                                    return of([]);
-                                })
-                            )
+                            .get<ZoneEntryExitLogResponse[]>(`${this.assetApiUrl}/${asset.id}/history/zones`)
+                            .pipe(catchError(() => of([])))
                     );
 
-                    return forkJoin(historyRequests).pipe(map((results: any) => (Array.isArray(results) ? results : []).flat()));
+                    return forkJoin(historyRequests).pipe(map((results) => results.flat()));
                 }),
                 map((responses) => this.transformAndEnrichLogs(responses)),
                 tap((logs) => {
@@ -185,9 +173,7 @@ export class ZoneEntryExitLogService implements OnDestroy {
                 }),
                 map((responses) => this.transformAndEnrichLogs(responses)),
                 tap((logs) => {
-                    // Only update logs if we received valid data (non-empty)
-                    // This prevents clearing logs when API returns empty during polling
-                    if (logs.length > 0) {
+                    if (logs.length > 0 || this.logsSubject.value.length > 0) {
                         this.logsSubject.next(logs);
                         this.applyFiltersAndPagination();
                     }
@@ -413,11 +399,10 @@ export class ZoneEntryExitLogService implements OnDestroy {
     }
 
     private fetchAndCacheAssets(): Observable<Map<string, AssetInfo>> {
-        return this.http.get<any>(this.assetApiUrl).pipe(
-            map((response) => {
-                const assets = Array.isArray(response.data) ? response.data : response;
+        return this.http.get<any[]>(this.assetApiUrl).pipe(
+            map((assets) => {
                 const assetMap = new Map<string, AssetInfo>();
-                assets.forEach((asset: any) => {
+                assets.forEach((asset) => {
                     assetMap.set(asset.id.toString(), { id: asset.id, name: asset.name });
                 });
                 this.assetCache = assetMap;
@@ -431,11 +416,10 @@ export class ZoneEntryExitLogService implements OnDestroy {
     }
 
     private fetchAndCacheZones(floorMapId: string): Observable<Map<string, ZoneInfo>> {
-        return this.http.get<any>(`${this.zoneApiUrl}/floormap/${floorMapId}`).pipe(
-            map((response) => {
-                const zones = Array.isArray(response.data) ? response.data : response;
+        return this.http.get<any[]>(`${this.zoneApiUrl}/floormap/${floorMapId}`).pipe(
+            map((zones) => {
                 const zoneMap = new Map<string, ZoneInfo>();
-                zones.forEach((zone: any) => {
+                zones.forEach((zone) => {
                     zoneMap.set(zone.id.toString(), { id: zone.id, name: zone.name });
                 });
                 this.zoneCache = zoneMap;

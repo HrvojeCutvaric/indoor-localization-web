@@ -23,17 +23,12 @@ export class AssetDetailsPanel implements OnChanges {
   constructor(private mapService: MapService) { }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['asset'] && this.asset && this.asset.floorMapId) {
+    if (changes['asset'] && this.asset) {
       this.loadFloorMapName(this.asset.floorMapId);
     }
   }
 
-  private loadFloorMapName(floorMapId: number | undefined): void {
-    if (!floorMapId) {
-      this.floorMapName = null;
-      return;
-    }
-
+  private loadFloorMapName(floorMapId: number): void {
     if (this.mapsSub) {
       this.mapsSub.unsubscribe();
     }

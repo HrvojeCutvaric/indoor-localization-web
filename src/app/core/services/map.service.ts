@@ -135,13 +135,9 @@ export class MapService {
   loadMaps(): void {
     this.loadingSubject.next(true);
     
-    this.http.get<any>(this.apiUrl)
+    this.http.get<FloorMapResponse[]>(this.apiUrl)
       .pipe(
-        map(response => {
-          // Handle nested data structure: { success, data: [...] } or plain array
-          const dataArray = (response && response.data) ? response.data : response;
-          return Array.isArray(dataArray) ? dataArray.map(r => this.mapResponseToMap(r)) : [];
-        }),
+        map(responses => responses.map(r => this.mapResponseToMap(r))),
         catchError(error => {
           console.error('Failed to load maps from backend:', error);
           // Return empty array instead of demo data - user should upload real maps

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
 import {
   Asset,
   CreateAssetRequest,
@@ -19,64 +19,32 @@ export class AssetService {
 
   getAssets(): Observable<Asset[]> {
     return this.http
-      .get<any>(this.baseUrl)
-      .pipe(
-        map(response => {
-          // Handle nested data structure: { success, data: [...] } or plain array
-          const dataArray = (response && response.data) ? response.data : response;
-          return Array.isArray(dataArray) ? dataArray : [];
-        }),
-        catchError(error => this.handleError(error))
-      );
+      .get<Asset[]>(this.baseUrl)
+      .pipe(catchError(error => this.handleError(error)));
   }
 
   getAssetsByFloorMap(floorMapId: number): Observable<Asset[]> {
     return this.http
-      .get<any>(`${this.baseUrl}/floormap/${floorMapId}`)
-      .pipe(
-        map(response => {
-          // Handle nested data structure: { success, data: [...] } or plain array
-          const dataArray = (response && response.data) ? response.data : response;
-          return Array.isArray(dataArray) ? dataArray : [];
-        }),
-        catchError(error => this.handleError(error))
-      );
+      .get<Asset[]>(`${this.baseUrl}/floormap/${floorMapId}`)
+      .pipe(catchError(error => this.handleError(error)));
   }
 
   getAssetById(id: number): Observable<Asset> {
     return this.http
-      .get<any>(`${this.baseUrl}/${id}`)
-      .pipe(
-        map(response => {
-          // Handle nested data structure: { success, data: {...} } or plain object
-          return (response && response.data) ? response.data : response;
-        }),
-        catchError(error => this.handleError(error))
-      );
+      .get<Asset>(`${this.baseUrl}/${id}`)
+      .pipe(catchError(error => this.handleError(error)));
   }
 
   createAsset(payload: CreateAssetRequest): Observable<Asset> {
     return this.http
-      .post<any>(this.baseUrl, payload)
-      .pipe(
-        map(response => {
-          // Handle nested data structure: { success, data: {...} } or plain object
-          return (response && response.data) ? response.data : response;
-        }),
-        catchError(error => this.handleError(error))
-      );
+      .post<Asset>(this.baseUrl, payload)
+      .pipe(catchError(error => this.handleError(error)));
   }
 
   updateAsset(id: number, payload: UpdateAssetRequest): Observable<Asset> {
     return this.http
-      .put<any>(`${this.baseUrl}/${id}`, payload)
-      .pipe(
-        map(response => {
-          // Handle nested data structure: { success, data: {...} } or plain object
-          return (response && response.data) ? response.data : response;
-        }),
-        catchError(error => this.handleError(error))
-      );
+      .put<Asset>(`${this.baseUrl}/${id}`, payload)
+      .pipe(catchError(error => this.handleError(error)));
   }
 
   updateAssetNameColor(id: number, payload: { name: string; color: string }): Promise<any> {

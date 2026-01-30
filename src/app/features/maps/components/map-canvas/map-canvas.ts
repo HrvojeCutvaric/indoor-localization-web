@@ -609,12 +609,10 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
     ctx.fillStyle = 'rgba(0, 163, 255, 0.15)';
 
     for (const zone of this.zones) {
-      // Ensure points is an array
-      const points = Array.isArray(zone.points) ? zone.points : [];
-      if (!points.length) continue;
+      if (!zone.points?.length) continue;
 
       ctx.beginPath();
-      points.forEach((p, idx) => {
+      zone.points.forEach((p, idx) => {
         const { px, py } = this.metersToPixels(p.x, p.y);
         if (idx === 0) ctx.moveTo(px, py);
         else ctx.lineTo(px, py);

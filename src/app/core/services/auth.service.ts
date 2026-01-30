@@ -3,13 +3,14 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, catchError, map, of, tap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { ApiResponse } from '../../core/services/api-response.model';
 
-interface RefreshResponse {
+interface RefreshData {
     accessToken: string;
     refreshToken: string;
 }
 
-export interface LoginResponse {
+export interface LoginData {
     accessToken: string;
     refreshToken: string;
     userId: number;
@@ -63,7 +64,7 @@ export class AuthService {
         return !!this.getAccessToken() && !!this.getRefreshToken();
     }
 
-    login(username: string, password: string): Observable<LoginResponse> {
+    login(username: string, password: string): Observable<LoginData> {
         const url = `${environment.apiUrl}/Auth/login`;
 
         const body = {
@@ -71,10 +72,11 @@ export class AuthService {
             password,
         };
 
-        return this.http.post<LoginResponse>(url, body).pipe(
-            tap((response) => {
-                this.setTokens(response.accessToken, response.refreshToken);
+        return this.http.post<ApiResponse<LoginData>>(url, body).pipe(
+            tap((res) => {
+                this.setTokens(res.data.accessToken, res.data.refreshToken);
             }),
+            map((res) => res.data),
             catchError((error: HttpErrorResponse) => {
                 const authError: AuthError = {
                     message: this.extractErrorMessage(error),
@@ -109,9 +111,9 @@ export class AuthService {
             refreshToken,
         };
 
-        return this.http.post<RefreshResponse>(url, body).pipe(
-            tap((response) => {
-                this.setTokens(response.accessToken, response.refreshToken);
+        return this.http.post<ApiResponse<RefreshData>>(url, body).pipe(
+            tap((res) => {
+                this.setTokens(res.data.accessToken, res.data.refreshToken);
             }),
             map(() => true),
             catchError(() => {

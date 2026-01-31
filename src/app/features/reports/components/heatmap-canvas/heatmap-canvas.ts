@@ -442,6 +442,15 @@ export class HeatmapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
       this.offsetY = mouseY - ((mouseY - this.offsetY) * newScale) / this.scale;
 
       this.scale = newScale;
+
+      // Recalculate pixels per meter when zoom changes
+      if (this.image) {
+        const imageWidth = this.image.width;
+        const imageHeight = this.image.height;
+        this.pxPerMeterX = (imageWidth * this.scale) / this.floorWidthMeters;
+        this.pxPerMeterY = (imageHeight * this.scale) / this.floorHeightMeters;
+      }
+
       this.draw();
     }
   }

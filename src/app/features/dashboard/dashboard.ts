@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
@@ -49,6 +49,26 @@ export class Dashboard {
 
   setActiveSection(section: DashboardSection): void {
     this.activeSection = section;
+  }
+
+  // Reports menu state
+  showReportsMenu = false;
+
+  toggleReportsMenu(event?: MouseEvent): void {
+    if (event) event.stopPropagation();
+    this.showReportsMenu = !this.showReportsMenu;
+  }
+
+  navigateToReport(path: string): void {
+    this.showReportsMenu = false;
+    // navigate to the report path
+    this.router.navigate([path]);
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event): void {
+    // close menu when clicking outside
+    this.showReportsMenu = false;
   }
 
   logout(): void {

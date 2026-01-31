@@ -29,6 +29,59 @@
         gap: 0.75rem;
     }
 
+    .reports-burger {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        margin-left: 0.5rem;
+
+        .burger-btn {
+            background: transparent;
+            border: none;
+            display: inline-flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 6px;
+            cursor: pointer;
+        }
+
+        .bar {
+            width: 18px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.9);
+            display: block;
+            border-radius: 2px;
+        }
+
+        .reports-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: #ffffff;
+            color: #222;
+            border-radius: 8px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+            padding: 0.5rem 0.5rem;
+            min-width: 180px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .reports-menu a {
+            padding: 0.6rem 0.9rem;
+            color: #222;
+            text-decoration: none;
+            cursor: pointer;
+            font-weight: 500;
+            border-radius: 6px;
+        }
+
+        .reports-menu a:hover {
+            background: #f5f7fb;
+        }
+    }
+
     .nav-link {
         border: none;
         background: transparent;
@@ -87,6 +140,26 @@
         margin-bottom: 1rem;
         font-size: 1.3rem;
         color: #222;
+    }
+
+    .report-links {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 0.75rem;
+    }
+
+    .report-links .btn {
+        background: #0095db;
+        color: #fff;
+        border: none;
+        padding: 0.5rem 0.9rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    .report-links .btn:hover {
+        background: #007bb5;
     }
 
     p {

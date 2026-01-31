@@ -77,6 +77,13 @@ export class ZonesManagementComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(zones => {
         this.zones = zones;
+        // Update selected zone if it's in the list (in case ID changed after backend sync)
+        if (this.selectedZone) {
+          const updatedSelectedZone = zones.find(z => z.id === this.selectedZone!.id);
+          if (updatedSelectedZone) {
+            this.selectedZone = updatedSelectedZone;
+          }
+        }
         // Auto-select first zone if available
         if (zones.length > 0 && !this.selectedZone) {
           this.selectZone(zones[0]);

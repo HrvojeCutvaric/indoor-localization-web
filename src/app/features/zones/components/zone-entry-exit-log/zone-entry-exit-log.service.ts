@@ -72,7 +72,7 @@ export class ZoneEntryExitLogService implements OnDestroy {
 
         // Fetch reference data first, then load logs
         forkJoin([
-            this.fetchAndCacheAssets(),
+            this.fetchAndCacheAssets(floorMapId),
             this.fetchAndCacheZones(floorMapId),
         ]).subscribe({
             next: () => {
@@ -102,32 +102,54 @@ export class ZoneEntryExitLogService implements OnDestroy {
 
         this.loadingSubject.next(true);
         this.errorSubject.next(null);
+        console.log('Loading logs for floor map:', this.floorMapId);
 
         // Get all assets for this floor map
         this.http
-            .get<any[]>(`${this.assetApiUrl}/floormap/${this.floorMapId}`)
+            .get<any>(`${this.assetApiUrl}/floormap/${this.floorMapId}`)
             .pipe(
-                switchMap((assets) => {
-                    if (assets.length === 0) {
+                tap((response) => {
+                    console.log('Assets API response:', response);
+                }),
+                switchMap((response) => {
+                    const assets = response.data || response;
+                    console.log('Extracted assets:', assets);
+                    if (!Array.isArray(assets) || assets.length === 0) {
+                        console.log('No assets found, returning empty');
                         return of([]);
                     }
 
+                    console.log('Fetching history for', assets.length, 'assets');
                     // Get zone history for all assets
                     const historyRequests = assets.map((asset) =>
                         this.http
-                            .get<ZoneEntryExitLogResponse[]>(`${this.assetApiUrl}/${asset.id}/history/zones`)
-                            .pipe(catchError(() => of([])))
+                            .get<any>(`${this.assetApiUrl}/${asset.id}/history/zones`)
+                            .pipe(
+                                map((historyResponse) => {
+                                    const historyData = historyResponse.data || historyResponse;
+                                    return Array.isArray(historyData) ? historyData : [];
+                                }),
+                                catchError((err) => {
+                                    console.warn('Failed to fetch history for asset', asset.id, err);
+                                    return of([]);
+                                })
+                            )
                     );
 
                     return forkJoin(historyRequests).pipe(map((results) => results.flat()));
                 }),
-                map((responses) => this.transformAndEnrichLogs(responses)),
+                map((responses) => {
+                    console.log('Transforming', responses.length, 'log responses');
+                    return this.transformAndEnrichLogs(responses);
+                }),
                 tap((logs) => {
+                    console.log('Logs loaded successfully:', logs.length, 'logs');
                     this.logsSubject.next(logs);
                     this.applyFiltersAndPagination();
                     this.loadingSubject.next(false);
                 }),
                 catchError((error: HttpErrorResponse) => {
+                    console.error('Error loading logs:', error);
                     const errorMessage = this.extractErrorMessage(error);
                     this.errorSubject.next(errorMessage);
                     this.loadingSubject.next(false);
@@ -153,17 +175,24 @@ export class ZoneEntryExitLogService implements OnDestroy {
                     }
 
                     return this.http
-                        .get<any[]>(`${this.assetApiUrl}/floormap/${this.floorMapId}`)
+                        .get<any>(`${this.assetApiUrl}/floormap/${this.floorMapId}`)
                         .pipe(
-                            switchMap((assets) => {
-                                if (assets.length === 0) {
+                            switchMap((response) => {
+                                const assets = response.data || response;
+                                if (!Array.isArray(assets) || assets.length === 0) {
                                     return of([]);
                                 }
 
                                 const historyRequests = assets.map((asset) =>
                                     this.http
-                                        .get<ZoneEntryExitLogResponse[]>(`${this.assetApiUrl}/${asset.id}/history/zones`)
-                                        .pipe(catchError(() => of([])))
+                                        .get<any>(`${this.assetApiUrl}/${asset.id}/history/zones`)
+                                        .pipe(
+                                            map((historyResponse) => {
+                                                const historyData = historyResponse.data || historyResponse;
+                                                return Array.isArray(historyData) ? historyData : [];
+                                            }),
+                                            catchError(() => of([]))
+                                        )
                                 );
 
                                 return forkJoin(historyRequests).pipe(map((results) => results.flat()));
@@ -380,53 +409,73 @@ export class ZoneEntryExitLogService implements OnDestroy {
     }
 
     private transformAndEnrichLogs(responses: ZoneEntryExitLogResponse[]): ZoneEntryExitLog[] {
+        console.log('Transforming', responses.length, 'responses');
+        console.log('Sample response:', responses[0]);
+        
         // Sort by enterDateTime descending (most recent first)
         const sorted = [...responses].sort(
             (a, b) => new Date(b.enterDateTime).getTime() - new Date(a.enterDateTime).getTime()
         );
 
-        return sorted.map((response) => ({
-            id: response.id.toString(),
-            assetId: response.assetId.toString(),
-            assetName: this.assetCache.get(response.assetId.toString())?.name,
-            zoneId: response.zoneId.toString(),
-            zoneName: this.zoneCache.get(response.zoneId.toString())?.name,
-            eventType: response.exitDateTime ? 'EXIT' : 'ENTRY',
-            enterDateTime: response.enterDateTime,
-            exitDateTime: response.exitDateTime,
-            retentionTime: response.retentionTime,
-        }));
+        return sorted.map((response) => {
+            const assetId = String(response.assetId || '');
+            const zoneId = String(response.zoneId || '');
+            
+            return {
+                id: String(response.id || ''),
+                assetId: assetId,
+                assetName: this.assetCache.get(assetId)?.name,
+                zoneId: zoneId,
+                zoneName: this.zoneCache.get(zoneId)?.name,
+                eventType: response.exitDateTime ? 'EXIT' : 'ENTRY',
+                enterDateTime: response.enterDateTime,
+                exitDateTime: response.exitDateTime,
+                retentionTime: response.retentionTime,
+            };
+        });
     }
 
-    private fetchAndCacheAssets(): Observable<Map<string, AssetInfo>> {
-        return this.http.get<any[]>(this.assetApiUrl).pipe(
-            map((assets) => {
+    private fetchAndCacheAssets(floorMapId: string): Observable<Map<string, AssetInfo>> {
+        const url = `${this.assetApiUrl}/floormap/${floorMapId}`;
+        console.debug('Fetching assets from:', url);
+        return this.http.get<any>(url).pipe(
+            map((response) => {
+                const assets = response.data || response;
+                console.debug('Assets fetched successfully:', assets.length);
                 const assetMap = new Map<string, AssetInfo>();
-                assets.forEach((asset) => {
-                    assetMap.set(asset.id.toString(), { id: asset.id, name: asset.name });
-                });
+                if (Array.isArray(assets)) {
+                    assets.forEach((asset) => {
+                        assetMap.set(asset.id.toString(), { id: asset.id, name: asset.name });
+                    });
+                }
                 this.assetCache = assetMap;
                 return assetMap;
             }),
-            catchError(() => {
-                console.warn('Failed to fetch assets for enrichment');
+            catchError((error: HttpErrorResponse) => {
+                console.error('Failed to fetch assets for enrichment from ' + url + ':', error.status, error.message, error);
                 return of(this.assetCache);
             })
         );
     }
 
     private fetchAndCacheZones(floorMapId: string): Observable<Map<string, ZoneInfo>> {
-        return this.http.get<any[]>(`${this.zoneApiUrl}/floormap/${floorMapId}`).pipe(
-            map((zones) => {
+        const url = `${this.zoneApiUrl}/floormap/${floorMapId}`;
+        console.debug('Fetching zones from:', url);
+        return this.http.get<any>(url).pipe(
+            map((response) => {
+                const zones = response.data || response;
+                console.debug('Zones fetched successfully:', zones.length);
                 const zoneMap = new Map<string, ZoneInfo>();
-                zones.forEach((zone) => {
-                    zoneMap.set(zone.id.toString(), { id: zone.id, name: zone.name });
-                });
+                if (Array.isArray(zones)) {
+                    zones.forEach((zone) => {
+                        zoneMap.set(zone.id.toString(), { id: zone.id, name: zone.name });
+                    });
+                }
                 this.zoneCache = zoneMap;
                 return zoneMap;
             }),
-            catchError(() => {
-                console.warn('Failed to fetch zones for enrichment');
+            catchError((error: HttpErrorResponse) => {
+                console.error('Failed to fetch zones for enrichment from ' + url + ':', error.status, error.message, error);
                 return of(this.zoneCache);
             })
         );

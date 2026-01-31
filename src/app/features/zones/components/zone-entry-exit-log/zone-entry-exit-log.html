@@ -3,33 +3,87 @@
     <div class="meta" *ngIf="mapName">Floormap: {{ mapName }}</div>
 </div>
 
-<!-- Filter bar (UI-only placeholder) -->
-<div class="filters" *ngIf="!loading && !error">
-    <input class="filter" type="text" placeholder="Filter by asset…" disabled />
-    <input class="filter" type="text" placeholder="Filter by zone…" disabled />
-
-    <select class="filter" disabled>
-        <option>All types</option>
-        <option>ENTRY</option>
-        <option>EXIT</option>
+<!-- Filter bar -->
+<div class="filters" *ngIf="!loading || logs.length > 0">
+    <select class="filter" [(ngModel)]="filterAssetId">
+        <option value="">All assets</option>
+        <option *ngFor="let asset of availableAssets" [value]="asset.id">
+            {{ asset.name }}
+        </option>
     </select>
 
-    <button class="btn" type="button" disabled>Apply</button>
+    <select class="filter" [(ngModel)]="filterZoneId">
+        <option value="">All zones</option>
+        <option *ngFor="let zone of availableZones" [value]="zone.id">
+            {{ zone.name }}
+        </option>
+    </select>
+
+    <select class="filter" [(ngModel)]="filterEventType">
+        <option value="">All types</option>
+        <option value="ENTRY">ENTRY</option>
+        <option value="EXIT">EXIT</option>
+    </select>
+
+    <input
+        class="filter date-filter"
+        type="datetime-local"
+        [(ngModel)]="filterDateStart"
+        placeholder="From date"
+        title="From date"
+    />
+
+    <input
+        class="filter date-filter"
+        type="datetime-local"
+        [(ngModel)]="filterDateEnd"
+        placeholder="To date"
+        title="To date"
+    />
+
+    <button class="btn btn-primary" type="button" (click)="applyFilters()">Apply</button>
+    <button
+        class="btn btn-secondary"
+        type="button"
+        (click)="clearFilters()"
+        *ngIf="hasFiltersApplied()"
+    >
+        Clear
+    </button>
 </div>
 
-<div class="state" *ngIf="loading">
-    Loading logs...
+<!-- Loading state -->
+<div class="state" *ngIf="loading && logs.length === 0">
+    <div class="loading-spinner"></div>
+    <span>Loading logs...</span>
 </div>
 
+<!-- Error state -->
 <div class="state error" *ngIf="!loading && error">
-    <div>{{ error }}</div>
-    <button type="button" class="btn" (click)="retry()">Retry</button>
+    <div class="error-icon">⚠️</div>
+    <div class="error-message">{{ error }}</div>
+    <button type="button" class="btn btn-primary" (click)="retry()">Retry</button>
 </div>
 
-<div class="state" *ngIf="!loading && !error && logs.length === 0">
-    No entry/exit events yet.
+<!-- Empty state -->
+<div class="state empty" *ngIf="!loading && !error && logs.length === 0">
+    <div class="empty-icon">📋</div>
+    <div>No entry/exit events yet.</div>
+    <div class="empty-hint" *ngIf="hasFiltersApplied()">
+        Try adjusting your filters or <button class="link-btn" (click)="clearFilters()">clear all filters</button>
+    </div>
 </div>
 
+<!-- Results summary -->
+<div class="results-summary" *ngIf="!loading && !error && paginatedData.totalCount > 0">
+    Showing {{ (paginatedData.pageNumber - 1) * paginatedData.pageSize + 1 }} -
+    {{ paginatedData.pageNumber * paginatedData.pageSize > paginatedData.totalCount
+        ? paginatedData.totalCount
+        : paginatedData.pageNumber * paginatedData.pageSize }}
+    of {{ paginatedData.totalCount }} events
+</div>
+
+<!-- Data table -->
 <div class="table-wrap" *ngIf="!loading && !error && logs.length > 0">
     <table class="log-table">
         <thead>
@@ -37,20 +91,22 @@
                 <th>Asset</th>
                 <th>Zone</th>
                 <th>Type</th>
-                <th>Timestamp</th>
+                <th>Entry Time</th>
+                <th>Exit Time</th>
+                <th>Duration</th>
             </tr>
         </thead>
 
         <tbody>
             <tr *ngFor="let e of logs; trackBy: trackById">
                 <td>
-                    <div class="main">{{ e.assetName || e.assetId }}</div>
-                    <div class="sub">{{ e.assetId }}</div>
+                    <div class="main">{{ e.assetName || 'Asset #' + e.assetId }}</div>
+                    <div class="sub">ID: {{ e.assetId }}</div>
                 </td>
 
                 <td>
-                    <div class="main">{{ e.zoneName || e.zoneId }}</div>
-                    <div class="sub">{{ e.zoneId }}</div>
+                    <div class="main">{{ e.zoneName || 'Zone #' + e.zoneId }}</div>
+                    <div class="sub">ID: {{ e.zoneId }}</div>
                 </td>
 
                 <td>
@@ -60,15 +116,55 @@
                 </td>
 
                 <td class="mono">
-                    {{ e.timestamp | date:'dd.MM.yyyy HH:mm:ss' }}
+                    {{ e.enterDateTime | date:'dd.MM.yyyy HH:mm:ss' }}
+                </td>
+
+                <td class="mono">
+                    <span *ngIf="e.exitDateTime">{{ e.exitDateTime | date:'dd.MM.yyyy HH:mm:ss' }}</span>
+                    <span *ngIf="!e.exitDateTime" class="still-inside">Still inside</span>
+                </td>
+
+                <td class="mono">
+                    <span *ngIf="e.retentionTime">{{ e.retentionTime }}</span>
+                    <span *ngIf="!e.retentionTime && !e.exitDateTime" class="ongoing">—</span>
+                    <span *ngIf="!e.retentionTime && e.exitDateTime">N/A</span>
                 </td>
             </tr>
         </tbody>
     </table>
 </div>
 
-<div class="footer" *ngIf="!loading && !error">
-    <button class="btn" type="button" disabled>
-        Load more
+<!-- Pagination -->
+<div class="pagination" *ngIf="!loading && !error && showPagination">
+    <button
+        class="btn btn-pagination"
+        type="button"
+        (click)="previousPage()"
+        [disabled]="!canGoPrevious"
+        title="Previous page"
+    >
+        ← Prev
+    </button>
+
+    <div class="page-numbers">
+        <button
+            *ngFor="let page of pageNumbers"
+            class="btn btn-page"
+            type="button"
+            [class.active]="page === paginatedData.pageNumber"
+            (click)="goToPage(page)"
+        >
+            {{ page }}
+        </button>
+    </div>
+
+    <button
+        class="btn btn-pagination"
+        type="button"
+        (click)="nextPage()"
+        [disabled]="!canGoNext"
+        title="Next page"
+    >
+        Next →
     </button>
 </div>

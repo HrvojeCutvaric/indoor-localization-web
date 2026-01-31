@@ -32,9 +32,12 @@ export class PolygonCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
   @Input() zone!: Zone;
   @Input() mapImagePath: string = '';
   @Input() imageLoaded: boolean = false;
+  @Input() floorWidthMeters: number = 40;
+  @Input() floorHeightMeters: number = 40;
 
   @Output() polygonCreated = new EventEmitter<Polygon>();
   @Output() polygonRemoved = new EventEmitter<string>();
+  @Output() polygonsCleared = new EventEmitter<string[]>();  // Emits array of removed polygon IDs
 
   // Canvas and drawing state
   private ctx!: CanvasRenderingContext2D;
@@ -49,9 +52,7 @@ export class PolygonCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
   private minScale = 0.5;
   private maxScale = 4;
 
-  // Floor dimensions in meters
-  private floorWidthMeters = 40;
-  private floorHeightMeters = 40;
+  // Floor dimensions in meters (will be set from inputs)
   private pxPerMeterX = 1;
   private pxPerMeterY = 1;
 
@@ -75,6 +76,13 @@ export class PolygonCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
   private animationFrameId: number | null = null;
 
   ngOnInit(): void {
+    console.log('PolygonCanvas: ngOnInit - Input values:', { 
+      floorWidthMeters: this.floorWidthMeters, 
+      floorHeightMeters: this.floorHeightMeters,
+      zone: this.zone,
+      mapImagePath: this.mapImagePath
+    });
+    
     if (this.zone && this.zone.polygons) {
       this.polygonsHistory = [...this.zone.polygons];
     }
@@ -158,15 +166,20 @@ export class PolygonCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
     this.offsetX = (canvas.width - this.image.width * this.scale) / 2;
     this.offsetY = (canvas.height - this.image.height * this.scale) / 2;
 
-    // Set floor dimensions
+    // Set floor dimensions - use inputs first, then fallback to selected map
+    let floorWidth = this.floorWidthMeters;
+    let floorHeight = this.floorHeightMeters;
+    
     const selectedMap = this.mapServiceInstance.getSelectedMap();
     if (selectedMap?.widthInMeters && selectedMap?.heightInMeters) {
-      this.floorWidthMeters = selectedMap.widthInMeters;
-      this.floorHeightMeters = selectedMap.heightInMeters;
+      floorWidth = selectedMap.widthInMeters;
+      floorHeight = selectedMap.heightInMeters;
     }
 
-    this.pxPerMeterX = this.image.width / this.floorWidthMeters;
-    this.pxPerMeterY = this.image.height / this.floorHeightMeters;
+    this.pxPerMeterX = this.image.width / floorWidth;
+    this.pxPerMeterY = this.image.height / floorHeight;
+    
+    console.log('PolygonCanvas: Initialized floor dimensions', { floorWidth, floorHeight, pxPerMeterX: this.pxPerMeterX, pxPerMeterY: this.pxPerMeterY });
   }
 
   private draw(): void {
@@ -358,6 +371,13 @@ export class PolygonCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   private convertImageToMetersCoordinates(imageX: number, imageY: number): Point {
+    // Safety check: if pxPerMeterX/Y are still at default 1, log warning
+    if (this.pxPerMeterX === 1 || this.pxPerMeterY === 1) {
+      console.warn('PolygonCanvas: pxPerMeterX/Y not properly initialized!', { pxPerMeterX: this.pxPerMeterX, pxPerMeterY: this.pxPerMeterY });
+      console.warn('PolygonCanvas: Image dimensions:', { width: this.image?.width, height: this.image?.height });
+      console.warn('PolygonCanvas: Floor dimensions:', { floorWidthMeters: this.floorWidthMeters, floorHeightMeters: this.floorHeightMeters });
+    }
+    
     const metersX = imageX / this.pxPerMeterX;
     const metersY = (this.image.height - imageY) / this.pxPerMeterY;
     return { x: metersX, y: metersY };
@@ -462,13 +482,24 @@ export class PolygonCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
   finishPolygon(): void {
     if (this.currentPoints.length < this.MIN_POINTS_FOR_POLYGON) return;
 
+    console.log('PolygonCanvas: finishPolygon - currentPoints:', this.currentPoints);
+    console.log('PolygonCanvas: finishPolygon - pxPerMeterX:', this.pxPerMeterX, 'pxPerMeterY:', this.pxPerMeterY);
+    console.log('PolygonCanvas: finishPolygon - image dimensions:', { width: this.image.width, height: this.image.height });
+
     const polygon: Polygon = {
       id: `polygon_${Date.now()}`,
-      points: this.currentPoints.map(p => ({ x: p.x, y: p.y })),
+      points: this.currentPoints.map(p => {
+        const pointData = { x: p.x, y: p.y };
+        console.log('PolygonCanvas: Storing point:', pointData, '(original pixel: x=', p.pixelX, 'y=', p.pixelY, ')');
+        return pointData;
+      }),
       createdAt: Date.now(),
       color: 'rgba(100, 200, 100, 0.3)',
       name: `Zone ${this.polygonsHistory.length + 1}`
     };
+
+    console.log('PolygonCanvas: Creating polygon:', polygon);
+    console.log('PolygonCanvas: Polygon points array:', polygon.points);
 
     this.polygonsHistory.push(polygon);
     this.polygonCreated.emit(polygon);
@@ -492,8 +523,16 @@ export class PolygonCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   clearAllPolygons(): void {
+    const polygonIds = this.polygonsHistory.map(p => p.id);
+    console.log('PolygonCanvas: Clearing all polygons:', polygonIds);
+    
     this.polygonsHistory = [];
     this.clearCurrentDrawing();
+    
+    // Emit event for all removed polygons
+    if (polygonIds.length > 0) {
+      this.polygonsCleared.emit(polygonIds);
+    }
   }
 
   undoLastPolygon(): void {

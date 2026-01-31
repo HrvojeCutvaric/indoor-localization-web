@@ -609,11 +609,40 @@ export class MapCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
     ctx.fillStyle = 'rgba(0, 163, 255, 0.15)';
 
     for (const zone of this.zones) {
-      if (!zone.points?.length) continue;
+      // Draw polygons if they exist
+      if (zone.polygons && Array.isArray(zone.polygons)) {
+        for (const polygon of zone.polygons) {
+          if (!polygon.points || !Array.isArray(polygon.points) || polygon.points.length === 0) continue;
+          
+          ctx.beginPath();
+          polygon.points.forEach((p, idx) => {
+            const { px, py } = this.metersToPixels(p.x, p.y);
+            if (idx === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          });
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        }
+        continue;
+      }
+      
+      // Fallback: try to use points field (for backward compatibility)
+      let points = zone.points;
+      if (typeof points === 'string') {
+        try {
+          points = JSON.parse(points);
+        } catch (e) {
+          console.error('Failed to parse zone points:', e);
+          continue;
+        }
+      }
+      
+      if (!Array.isArray(points) || !points.length) continue;
 
       ctx.beginPath();
-      zone.points.forEach((p, idx) => {
-        const { px, py } = this.metersToPixels(p.x, p.y);
+      points.forEach((p: any, idx) => {
+        const { px, py } = this.metersToPixels(p.x || 0, p.y || 0);
         if (idx === 0) ctx.moveTo(px, py);
         else ctx.lineTo(px, py);
       });

@@ -5,13 +5,14 @@ import { AuthService } from '../../core/services/auth.service';
 import { MapCanvasComponent } from '../maps/components/map-canvas/map-canvas';
 import { AssetManagement } from '../assets/assets-management';
 import { ZonesManagementComponent } from '../zones/zones-management';
+import { HeatmapCanvasComponent } from '../reports/components/heatmap-canvas/heatmap-canvas';
 
 type DashboardSection = 'maps' | 'assets' | 'zones' | 'reports';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, MapCanvasComponent, AssetManagement, ZonesManagementComponent],
+  imports: [CommonModule, MapCanvasComponent, AssetManagement, ZonesManagementComponent, HeatmapCanvasComponent],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.scss'],
 })

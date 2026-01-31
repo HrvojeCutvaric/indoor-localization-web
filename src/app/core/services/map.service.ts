@@ -3,7 +3,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { BehaviorSubject, Observable, throwError, of } from 'rxjs';
 import { map, tap, catchError, finalize, filter, take, switchMap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
-
+import { ApiResponse } from '../../core/services/api-response.model';
 
 export interface FloorMapResponse {
   id: number;
@@ -14,7 +14,6 @@ export interface FloorMapResponse {
   widthInMeters: number;
   heightInMeters: number;
 }
-
 
 export interface Map {
   id: string;
@@ -30,7 +29,6 @@ export interface MapError {
   message: string;
   code: string;
 }
-
 
 export interface FloorMapCreateRequest {
   name: string;
@@ -76,7 +74,6 @@ export class MapService {
   private restoreSelectedMap(): void {
     const savedMapId = localStorage.getItem(this.SELECTED_MAP_KEY);
     if (savedMapId) {
-      // Try to get the map from the loaded maps
       this.maps$.pipe(
         filter((mapList: Map[]) => mapList.length > 0),
         take(1),
@@ -85,9 +82,8 @@ export class MapService {
           if (foundMap) {
             return of(foundMap);
           } else {
-            // If map not found in the list, fetch it directly from backend
-            return this.http.get<FloorMapResponse>(`${this.apiUrl}/${savedMapId}`).pipe(
-              map(response => this.mapResponseToMap(response)),
+            return this.http.get<ApiResponse<FloorMapResponse>>(`${this.apiUrl}/${savedMapId}`).pipe(
+              map(res => this.mapResponseToMap(res.data)),
               catchError(() => {
                 localStorage.removeItem(this.SELECTED_MAP_KEY);
                 return of(null);
@@ -96,13 +92,14 @@ export class MapService {
           }
         }),
         filter((result: Map | null) => result !== null)
-      ).subscribe((map: Map | null) => {
-        if (map) {
-          this.selectedMapSubject.next(map);
+      ).subscribe((mapValue: Map | null) => {
+        if (mapValue) {
+          this.selectedMapSubject.next(mapValue);
         }
       });
     }
   }
+
   private mapResponseToMap(response: FloorMapResponse): Map {
     return {
       id: response.id.toString(),
@@ -115,32 +112,28 @@ export class MapService {
     };
   }
 
-
   private handleError(error: HttpErrorResponse): Observable<never> {
     let errorMessage = 'An unknown error occurred';
-    
-    if (error.error instanceof ErrorEvent) {
 
+    if (error.error instanceof ErrorEvent) {
       errorMessage = error.error.message;
     } else {
-   
       errorMessage = error.error?.message || `Error Code: ${error.status}`;
     }
-    
+
     console.error('MapService error:', errorMessage);
     return throwError(() => ({ message: errorMessage, code: error.status.toString() } as MapError));
   }
 
-
   loadMaps(): void {
     this.loadingSubject.next(true);
-    
-    this.http.get<FloorMapResponse[]>(this.apiUrl)
+
+    this.http.get<ApiResponse<FloorMapResponse[]>>(this.apiUrl)
       .pipe(
+        map(res => res.data),
         map(responses => responses.map(r => this.mapResponseToMap(r))),
         catchError(error => {
           console.error('Failed to load maps from backend:', error);
-          // Return empty array instead of demo data - user should upload real maps
           return of([]);
         }),
         finalize(() => this.loadingSubject.next(false))
@@ -163,35 +156,32 @@ export class MapService {
   }
 
   getMapById(id: string): Observable<Map> {
-    return this.http.get<FloorMapResponse>(`${this.apiUrl}/${id}`)
+    return this.http.get<ApiResponse<FloorMapResponse>>(`${this.apiUrl}/${id}`)
       .pipe(
-        map(response => this.mapResponseToMap(response)),
+        map(res => this.mapResponseToMap(res.data)),
         catchError(this.handleError)
       );
   }
 
-
   createMap(formData: FormData): Observable<Map> {
     this.loadingSubject.next(true);
-    
-   
+
     if (!formData.has('widthInMeters')) {
-      formData.append('widthInMeters', '40'); 
+      formData.append('widthInMeters', '40');
     }
     if (!formData.has('heightInMeters')) {
-      formData.append('heightInMeters', '40'); 
+      formData.append('heightInMeters', '40');
     }
-    
-   
+
     const imageFile = formData.get('image');
     if (imageFile && imageFile instanceof File) {
       formData.delete('image');
       formData.append('imageFile', imageFile);
     }
-    
-    return this.http.post<FloorMapResponse>(this.apiUrl, formData)
+
+    return this.http.post<ApiResponse<FloorMapResponse>>(this.apiUrl, formData)
       .pipe(
-        map(response => this.mapResponseToMap(response)),
+        map(res => this.mapResponseToMap(res.data)),
         tap(newMap => {
           const currentMaps = this.mapsSubject.value;
           this.mapsSubject.next([...currentMaps, newMap]);
@@ -201,20 +191,18 @@ export class MapService {
       );
   }
 
-
   updateMap(id: string, formData: FormData): Observable<Map> {
     this.loadingSubject.next(true);
-    
 
     const imageFile = formData.get('image');
     if (imageFile && imageFile instanceof File) {
       formData.delete('image');
       formData.append('imageFile', imageFile);
     }
-    
-    return this.http.put<FloorMapResponse>(`${this.apiUrl}/${id}`, formData)
+
+    return this.http.put<ApiResponse<FloorMapResponse>>(`${this.apiUrl}/${id}`, formData)
       .pipe(
-        map(response => this.mapResponseToMap(response)),
+        map(res => this.mapResponseToMap(res.data)),
         tap(updatedMap => {
           const currentMaps = this.mapsSubject.value;
           const index = currentMaps.findIndex(m => m.id === id);
@@ -228,18 +216,16 @@ export class MapService {
       );
   }
 
-
   deleteMap(id: string): Observable<void> {
     this.loadingSubject.next(true);
-    
-    return this.http.delete<{ message: string }>(`${this.apiUrl}/${id}`)
+
+    return this.http.delete<ApiResponse<unknown>>(`${this.apiUrl}/${id}`)
       .pipe(
         map(() => void 0),
         tap(() => {
           const currentMaps = this.mapsSubject.value;
           const filtered = currentMaps.filter(m => m.id !== id);
           this.mapsSubject.next(filtered);
-          
 
           if (this.selectedMapSubject.value?.id === id) {
             this.selectedMapSubject.next(null);
@@ -254,9 +240,9 @@ export class MapService {
     return this.loadingSubject.value;
   }
 
-  setSelectedMap(map: Map): void {
-    this.selectedMapSubject.next(map);
-    localStorage.setItem(this.SELECTED_MAP_KEY, map.id.toString());
+  setSelectedMap(mapValue: Map): void {
+    this.selectedMapSubject.next(mapValue);
+    localStorage.setItem(this.SELECTED_MAP_KEY, mapValue.id.toString());
   }
 
   getSelectedMap(): Map | null {
@@ -271,16 +257,15 @@ export class MapService {
   getFullImageUrl(imageUrl: string | undefined): string {
     if (!imageUrl) {
       console.log('No image URL provided, using demo');
-      return '/floormaps/demo-floormap.png'; 
+      return '/floormaps/demo-floormap.png';
     }
-    
+
     console.log('Image URL from backend:', imageUrl);
 
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       console.log('Using absolute URL:', imageUrl);
       return imageUrl;
     }
-    
 
     if (imageUrl.startsWith('/images/')) {
       const baseUrl = environment.apiUrl.replace('/api', '');
@@ -288,8 +273,7 @@ export class MapService {
       console.log('Constructed image URL:', fullUrl);
       return fullUrl;
     }
-    
-    // If it's a relative path without leading slash, prepend the base API URL
+
     if (!imageUrl.startsWith('/')) {
       const baseUrl = environment.apiUrl.replace('/api', '');
       const fullUrl = `${baseUrl}/images/${imageUrl}`;

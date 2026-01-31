@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MapService } from '../../core/services/map.service';
-import { ZoneService } from './zone.service';
+import { ZonesService } from './zones.service';
 import { PolygonCanvasComponent } from './components/polygon-canvas/polygon-canvas';
 import { ZoneEntryExitLogComponent } from './components/zone-entry-exit-log/zone-entry-exit-log';
 import { Zone, Polygon } from './zone.model';
@@ -20,7 +20,7 @@ import { takeUntil } from 'rxjs/operators';
 export class ZonesManagementComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private mapService = inject(MapService);
-  private zoneService = inject(ZoneService);
+  private zonesService = inject(ZonesService);
   private destroy$ = new Subject<void>();
 
   zones: Zone[] = [];
@@ -71,6 +71,17 @@ export class ZonesManagementComponent implements OnInit, OnDestroy {
           this.router.navigate(['/maps']);
         }
       });
+
+    // Subscribe to zones from service
+    this.zonesService.zones$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(zones => {
+        this.zones = zones;
+        // Auto-select first zone if available
+        if (zones.length > 0 && !this.selectedZone) {
+          this.selectZone(zones[0]);
+        }
+      });
   }
 
   ngOnDestroy(): void {
@@ -80,28 +91,25 @@ export class ZonesManagementComponent implements OnInit, OnDestroy {
 
   private loadZones(): void {
     if (this.selectedMap) {
-      this.zones = this.zoneService.getZonesByFloorMap(this.selectedMap.id);
-      if (this.zones.length > 0) {
-        this.selectZone(this.zones[0]);
-      }
+      // Load zones from backend on initial load
+      this.zonesService.setMap(this.selectedMap.id);
     }
   }
 
   selectZone(zone: Zone): void {
     this.selectedZone = zone;
-    this.zoneService.selectZone(zone);
+    this.zonesService.selectZone(zone);
   }
 
   createZone(): void {
     if (!this.newZoneName.trim() || !this.selectedMap) return;
 
-    const zone = this.zoneService.createZone(
+    const zone = this.zonesService.createZone(
       this.selectedMap.id,
       this.newZoneName,
       this.newZoneDescription
     );
 
-    this.zones.push(zone);
     this.selectZone(zone);
     this.newZoneName = '';
     this.newZoneDescription = '';
@@ -110,8 +118,7 @@ export class ZonesManagementComponent implements OnInit, OnDestroy {
 
   deleteZone(zoneId: string): void {
     if (confirm('Are you sure you want to delete this zone?')) {
-      this.zoneService.deleteZone(zoneId);
-      this.zones = this.zones.filter(z => z.id !== zoneId);
+      this.zonesService.deleteZone(zoneId);
       if (this.selectedZone?.id === zoneId) {
         this.selectedZone = null;
       }
@@ -120,9 +127,9 @@ export class ZonesManagementComponent implements OnInit, OnDestroy {
 
   onPolygonCreated(polygon: Polygon): void {
     if (this.selectedZone) {
-      this.zoneService.addPolygonToZone(this.selectedZone.id, polygon);
-      // Refresh the selected zone from the service to ensure consistency
-      const updatedZone = this.zoneService.getZoneById(this.selectedZone.id);
+      this.zonesService.addPolygonToZone(this.selectedZone.id, polygon);
+      // Update selected zone to reflect the new polygon
+      const updatedZone = this.zonesService.getZoneById(this.selectedZone.id);
       if (updatedZone) {
         this.selectedZone = updatedZone;
       }
@@ -131,8 +138,26 @@ export class ZonesManagementComponent implements OnInit, OnDestroy {
 
   onPolygonRemoved(polygonId: string): void {
     if (this.selectedZone) {
-      this.zoneService.removePolygonFromZone(this.selectedZone.id, polygonId);
-      this.selectedZone.polygons = this.selectedZone.polygons.filter((p: Polygon) => p.id !== polygonId);
+      this.zonesService.removePolygonFromZone(this.selectedZone.id, polygonId);
+      const updatedZone = this.zonesService.getZoneById(this.selectedZone.id);
+      if (updatedZone) {
+        this.selectedZone = updatedZone;
+      }
+    }
+  }
+
+  onPolygonsCleared(polygonIds: string[]): void {
+    if (this.selectedZone) {
+      console.log('ZonesManagement: Clearing polygons:', polygonIds);
+      // Remove each polygon
+      polygonIds.forEach(polygonId => {
+        this.zonesService.removePolygonFromZone(this.selectedZone!.id, polygonId);
+      });
+      // Update selected zone
+      const updatedZone = this.zonesService.getZoneById(this.selectedZone.id);
+      if (updatedZone) {
+        this.selectedZone = updatedZone;
+      }
     }
   }
 

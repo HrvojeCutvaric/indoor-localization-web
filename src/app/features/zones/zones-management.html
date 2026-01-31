@@ -43,15 +43,18 @@
                             </button>
                         </div>
                         <p class="zone-description" *ngIf="zone.description">{{ zone.description }}</p>
-                        <span class="zone-polygon-count">{{ zone.polygons.length }} polygon(s)</span>
+                        <span class="zone-polygon-count">{{ zone.polygons?.length || 0 }} polygon(s)</span>
                     </div>
                 </div>
             </div>
 
             <div class="canvas-area">
                 <app-polygon-canvas *ngIf="selectedZone" [zone]="selectedZone" [mapImagePath]="mapImagePath"
-                    [imageLoaded]="imageLoaded" (polygonCreated)="onPolygonCreated($event)"
-                    (polygonRemoved)="onPolygonRemoved($event)">
+                    [imageLoaded]="imageLoaded" [floorWidthMeters]="selectedMap?.widthInMeters || 40"
+                    [floorHeightMeters]="selectedMap?.heightInMeters || 40"
+                    (polygonCreated)="onPolygonCreated($event)"
+                    (polygonRemoved)="onPolygonRemoved($event)"
+                    (polygonsCleared)="onPolygonsCleared($event)">
                 </app-polygon-canvas>
 
                 <div *ngIf="!selectedZone" class="empty-state">

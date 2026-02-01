@@ -36,12 +36,17 @@
             </div>
 
             <div class="date-buttons">
-                <button class="btn-apply" (click)="applyDateRange()">✓ Apply</button>
-                <button class="btn-clear" (click)="clearDateRange()">✕ Clear</button>
+                <button class="btn-apply" (click)="applyDateRange()" [disabled]="dataLoading">
+                    {{ dataLoading ? '⏳ Loading...' : '✓ Apply' }}
+                </button>
+                <button class="btn-clear" (click)="clearDateRange()" [disabled]="dataLoading">✕ Clear</button>
             </div>
 
-            <div *ngIf="dateRangeApplied" class="date-status">
-                <small>Filter applied</small>
+            <div *ngIf="dataLoading" class="date-status loading">
+                <small>⏳ Filtering data...</small>
+            </div>
+            <div *ngIf="dateRangeApplied && !dataLoading" class="date-status">
+                <small>✓ Filter applied ({{ history.length }} points)</small>
             </div>
         </div>
 

@@ -69,6 +69,7 @@ export class HeatmapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
   startDate: string = '';
   endDate: string = '';
   dateRangeApplied = false;
+  isLoading = false;
 
   // Trail visualization
   showTrails = true;
@@ -159,10 +160,51 @@ export class HeatmapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
   private loadHeatmapData(): void {
     if (!this.selectedMap) return;
 
-    const startDate = this.startDate ? new Date(this.startDate) : undefined;
-    const endDate = this.endDate ? new Date(this.endDate) : undefined;
+    this.isLoading = true;
 
-    console.log('Loading heatmap with date range:', { startDate, endDate });
+    // Parse datetime-local inputs as local time
+    // datetime-local gives us YYYY-MM-DDTHH:mm which represents LOCAL time
+    // We parse it directly without adding Z suffix to preserve local timezone
+    let startDate: Date | undefined = undefined;
+    let endDate: Date | undefined = undefined;
+
+    if (this.startDate && this.startDate.trim()) {
+      try {
+        // Parse as local time - new Date() treats strings without Z as local time
+        startDate = new Date(this.startDate.trim());
+        if (isNaN(startDate.getTime())) {
+          startDate = undefined;
+          console.error('❌ Invalid startDate:', this.startDate);
+        } else {
+          console.log('✅ Parsed startDate (local):', this.startDate, '→', startDate.toString(), 'ms:', startDate.getTime());
+        }
+      } catch (e) {
+        console.error('❌ Failed to parse startDate:', this.startDate, e);
+      }
+    }
+
+    if (this.endDate && this.endDate.trim()) {
+      try {
+        // Parse as local time - new Date() treats strings without Z as local time
+        endDate = new Date(this.endDate.trim());
+        if (isNaN(endDate.getTime())) {
+          endDate = undefined;
+          console.error('❌ Invalid endDate:', this.endDate);
+        } else {
+          console.log('✅ Parsed endDate (local):', this.endDate, '→', endDate.toString(), 'ms:', endDate.getTime());
+        }
+      } catch (e) {
+        console.error('❌ Failed to parse endDate:', this.endDate, e);
+      }
+    }
+
+    console.log('%cℹ️ About to call generateHeatmapData', 'background: purple; color: white; font-weight: bold', {
+      mapId: this.selectedMap.id,
+      startDate,
+      endDate,
+      startDateValid: startDate instanceof Date && !isNaN(startDate.getTime()),
+      endDateValid: endDate instanceof Date && !isNaN(endDate.getTime())
+    });
 
     this.heatmapService
       .generateHeatmapData(this.selectedMap.id, startDate, endDate)
@@ -171,12 +213,18 @@ export class HeatmapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
         next: (data) => {
           this.heatmapData = data;
           this.heatmapService.updateHeatmapData(data);
+          this.isLoading = false;
+          console.log('%c📊 Heatmap data loaded:', 'background: green; color: white; font-weight: bold', {
+            pointsCount: data.points.length,
+            trailsCount: data.trails.length
+          });
           if (this.imageLoaded) {
             this.draw();
           }
         },
         error: (err) => {
           console.error('Failed to load heatmap data:', err);
+          this.isLoading = false;
         },
       });
   }
@@ -267,7 +315,7 @@ export class HeatmapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
     // Draw heatmap points with gradients
     this.heatmapData.points.forEach((point) => {
       const screenX = this.offsetX + point.x * this.pxPerMeterX;
-      const screenY = this.offsetY + point.y * this.pxPerMeterY;
+      const screenY = this.offsetY + (this.floorHeightMeters - point.y) * this.pxPerMeterY;
 
       const gradient = this.heatmapService.generateGradient(
         heatmapCtx,
@@ -310,9 +358,9 @@ export class HeatmapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
         const nextPoint = trail.points[i + 1];
 
         const x1 = this.offsetX + currentPoint.x * this.pxPerMeterX;
-        const y1 = this.offsetY + currentPoint.y * this.pxPerMeterY;
+        const y1 = this.offsetY + (this.floorHeightMeters - currentPoint.y) * this.pxPerMeterY;
         const x2 = this.offsetX + nextPoint.x * this.pxPerMeterX;
-        const y2 = this.offsetY + nextPoint.y * this.pxPerMeterY;
+        const y2 = this.offsetY + (this.floorHeightMeters - nextPoint.y) * this.pxPerMeterY;
 
         // Create gradient for this segment based on intensity
         const gradient = this.ctx.createLinearGradient(x1, y1, x2, y2);
@@ -340,7 +388,7 @@ export class HeatmapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
       // Draw dots at each point along the trail
       trail.points.forEach((point) => {
         const screenX = this.offsetX + point.x * this.pxPerMeterX;
-        const screenY = this.offsetY + point.y * this.pxPerMeterY;
+        const screenY = this.offsetY + (this.floorHeightMeters - point.y) * this.pxPerMeterY;
 
         // Dot size increases with intensity
         const dotRadius = 3 + point.intensity * 4;
@@ -400,10 +448,24 @@ export class HeatmapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
    * Apply date range filter
    */
   applyDateRange(): void {
+    console.log('⚠️ APPLY DATE RANGE CALLED - THIS IS A TEST LOG');
+    
+    console.log('applyDateRange() called');
+    console.log('Current values:', { 
+      startDate: this.startDate, 
+      endDate: this.endDate,
+      selectedMapId: this.selectedMap?.id
+    });
+    
     if (!this.startDate && !this.endDate) {
       console.warn('Please select at least one date');
       return;
     }
+    console.log('Apply date range clicked:', { 
+      startDateInput: this.startDate, 
+      endDateInput: this.endDate,
+      selectedMapId: this.selectedMap?.id
+    });
     this.dateRangeApplied = true;
     this.loadHeatmapData();
   }
@@ -415,6 +477,7 @@ export class HeatmapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
     this.startDate = '';
     this.endDate = '';
     this.dateRangeApplied = false;
+    this.isLoading = false;
     this.loadHeatmapData();
   }
 

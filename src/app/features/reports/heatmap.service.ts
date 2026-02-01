@@ -52,6 +52,14 @@ export class HeatmapService {
         startDate?: Date,
         endDate?: Date
     ): Observable<HeatmapData> {
+        console.log('%cgenerateHeatmapData called', 'background: cyan; color: black; font-weight: bold', { 
+            floorMapId, 
+            startDate, 
+            endDate,
+            hasStartDate: !!startDate,
+            hasEndDate: !!endDate
+        });
+        
         // Fetch all assets for this floor map
         return this.http.get<any>(`${this.assetApiUrl}/floormap/${floorMapId}`).pipe(
             switchMap((response) => {
@@ -75,14 +83,20 @@ export class HeatmapService {
                 );
 
                 return forkJoin(historyRequests).pipe(
-                    map((results) =>
-                        this.buildHeatmapFromHistory(
+                    map((results) => {
+                        console.log('%c🔴 ABOUT TO BUILD HEATMAP WITH DATES', 'background: red; color: yellow; font-weight: bold; font-size: 14px', {
+                            startDate,
+                            endDate,
+                            startDateMs: startDate?.getTime(),
+                            endDateMs: endDate?.getTime()
+                        });
+                        return this.buildHeatmapFromHistory(
                             floorMapId,
                             results,
                             startDate,
                             endDate
-                        )
-                    )
+                        );
+                    })
                 );
             }),
             catchError((error) => {
@@ -104,31 +118,62 @@ export class HeatmapService {
         const trails: AssetTrail[] = [];
         const allPoints: HeatmapDataPoint[] = [];
 
+        // Convert dates to timestamps for comparison
+        const startMs = startDate ? startDate.getTime() : null;
+        const endMs = endDate ? endDate.getTime() : null;
+        
+        console.log('=== HEATMAP FILTER START ===');
+        console.log('Filter params:', { startDate, endDate, startMs, endMs });
+
         assetHistoryResults.forEach((result, idx) => {
             const { asset, history } = result;
             if (!Array.isArray(history) || history.length === 0) {
                 return;
             }
 
-            // Filter by date range if provided
+            const originalCount = history.length;
+            
+            // Log first record to see the timestamp format
+            if (history.length > 0) {
+                console.log(`Asset ${asset.id} sample record:`, history[0]);
+            }
+
+            // FILTER: Only include records within the date range
             let filteredHistory = history;
-            if (startDate || endDate) {
-                filteredHistory = history.filter((h) => {
-                    const timestamp = new Date(h.timestamp);
-                    if (startDate && timestamp < startDate) return false;
-                    if (endDate && timestamp > endDate) return false;
+            if (startMs !== null || endMs !== null) {
+                filteredHistory = history.filter((record) => {
+                    // Get timestamp - the field is called 'dateTime' in the API response
+                    const tsValue = record.dateTime || record.DateTime || record.timestamp || record.Timestamp || record.createdAt || record.time;
+                    if (!tsValue) {
+                        return false; // Skip records without timestamp
+                    }
+                    
+                    const recordMs = new Date(tsValue).getTime();
+                    if (isNaN(recordMs)) {
+                        return false; // Skip invalid timestamps
+                    }
+                    
+                    // Check range
+                    if (startMs !== null && recordMs < startMs) {
+                        return false;
+                    }
+                    if (endMs !== null && recordMs > endMs) {
+                        return false;
+                    }
                     return true;
                 });
             }
+            
+            console.log(`Asset ${asset.id}: ${originalCount} -> ${filteredHistory.length} records after filter`);
 
             if (filteredHistory.length === 0) {
                 return;
             }
 
-            // Sort by timestamp ascending
+            // Sort by dateTime ascending
             filteredHistory.sort(
                 (a, b) =>
-                    new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+                    new Date(a.dateTime || a.timestamp).getTime() - new Date(b.dateTime || b.timestamp).getTime()
             );
 
             // Create trail points with intensity based on recency
@@ -137,7 +182,7 @@ export class HeatmapService {
                 return {
                     x: record.x || 0,
                     y: record.y || 0,
-                    timestamp: record.timestamp || new Date().toISOString(),
+                    timestamp: record.dateTime || record.timestamp || new Date().toISOString(),
                     intensity,
                 };
             });
@@ -162,12 +207,20 @@ export class HeatmapService {
 
         // Calculate intensity bounds
         if (allPoints.length === 0) {
+            console.log('%cFINAL RESULT: No points after filtering', 'background: red; color: white; font-weight: bold');
             return this.createEmptyHeatmap(floorMapId);
         }
 
         const intensities = allPoints.map((p) => p.intensity);
         const minIntensity = Math.min(...intensities);
         const maxIntensity = Math.max(...intensities);
+
+        console.log('%cFINAL RESULT: Success', 'background: green; color: white; font-weight: bold', {
+            totalPoints: allPoints.length,
+            totalTrails: trails.length,
+            minIntensity,
+            maxIntensity
+        });
 
         return {
             mapId: floorMapId,

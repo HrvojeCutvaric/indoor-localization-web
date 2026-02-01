@@ -23,16 +23,19 @@
             </div>
 
             <div class="date-buttons">
-                <button class="btn-apply" (click)="applyDateRange()" title="Apply date range filter">
-                    ✓ Apply
+                <button class="btn-apply" (click)="applyDateRange()" [disabled]="isLoading" title="Apply date range filter">
+                    {{ isLoading ? '⏳ Loading...' : '✓ Apply' }}
                 </button>
-                <button class="btn-clear" (click)="clearDateRange()" title="Clear date range filter">
+                <button class="btn-clear" (click)="clearDateRange()" [disabled]="isLoading" title="Clear date range filter">
                     ✕ Clear
                 </button>
             </div>
 
-            <div *ngIf="dateRangeApplied" class="date-status">
-                <small>Filter applied</small>
+            <div *ngIf="isLoading" class="date-status loading">
+                <small>⏳ Filtering data...</small>
+            </div>
+            <div *ngIf="dateRangeApplied && !isLoading" class="date-status">
+                <small>✓ Filter applied ({{ heatmapData?.points?.length || 0 }} points)</small>
             </div>
         </div>
 

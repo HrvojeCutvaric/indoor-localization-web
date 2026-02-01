@@ -118,10 +118,22 @@ export class MapService {
     if (error.error instanceof ErrorEvent) {
       errorMessage = error.error.message;
     } else {
-      errorMessage = error.error?.message || `Error Code: ${error.status}`;
+      // Try various response formats
+      if (error.error?.message) {
+        errorMessage = error.error.message;
+      } else if (error.error?.title) {
+        errorMessage = error.error.title;
+      } else if (error.error?.detail) {
+        errorMessage = error.error.detail;
+      } else if (typeof error.error === 'string') {
+        errorMessage = error.error;
+      } else {
+        errorMessage = `Error Code: ${error.status}`;
+      }
     }
 
     console.error('MapService error:', errorMessage);
+    console.error('Full error response:', error.error);
     return throwError(() => ({ message: errorMessage, code: error.status.toString() } as MapError));
   }
 

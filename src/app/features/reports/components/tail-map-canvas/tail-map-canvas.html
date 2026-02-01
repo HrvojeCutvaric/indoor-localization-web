@@ -1,0 +1,103 @@
+<div class="tailmap-container">
+    <div class="tailmap-controls">
+        <div class="control-section">
+            <h4>Asset</h4>
+
+            <div class="control-group">
+                <label>Selected asset *</label>
+                <select class="select" [(ngModel)]="selectedAssetId" (change)="onAssetChange()">
+                    <option [ngValue]="null">Select asset</option>
+                    <option *ngFor="let a of assets" [ngValue]="a.id">
+                        {{ a.name || ('Asset ' + a.id) }}
+                    </option>
+                </select>
+            </div>
+
+            <button class="btn-generate" [disabled]="!selectedAssetId || isGenerating" (click)="generateTailMap()">
+                {{ isGenerating ? 'Generating trail…' : 'Generate' }}
+            </button>
+
+            <div class="hint" *ngIf="!selectedAssetId">
+                Select an asset to generate Tail map.
+            </div>
+        </div>
+
+        <div class="control-section">
+            <h4>Date Range Filter</h4>
+
+            <div class="control-group">
+                <label for="start-date">Start</label>
+                <input id="start-date" type="datetime-local" [(ngModel)]="startDate" class="date-input" />
+            </div>
+
+            <div class="control-group">
+                <label for="end-date">End</label>
+                <input id="end-date" type="datetime-local" [(ngModel)]="endDate" class="date-input" />
+            </div>
+
+            <div class="date-buttons">
+                <button class="btn-apply" (click)="applyDateRange()" [disabled]="dataLoading">
+                    {{ dataLoading ? '⏳ Loading...' : '✓ Apply' }}
+                </button>
+                <button class="btn-clear" (click)="clearDateRange()" [disabled]="dataLoading">✕ Clear</button>
+            </div>
+
+            <div *ngIf="dataLoading" class="date-status loading">
+                <small>⏳ Filtering data...</small>
+            </div>
+            <div *ngIf="dateRangeApplied && !dataLoading" class="date-status">
+                <small>✓ Filter applied ({{ history.length }} points)</small>
+            </div>
+        </div>
+
+        <div class="control-section">
+            <h4>Visualization</h4>
+
+            <div class="control-group">
+                <label>Trail width</label>
+
+                <div class="slider-row">
+                    <input type="range" min="1" max="10" step="0.5" [(ngModel)]="trailLineWidth" (change)="draw()"
+                        class="slider" />
+                    <span class="value">{{ trailLineWidth.toFixed(1) }}px</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>
+                    <input type="checkbox" [(ngModel)]="showPoints" (change)="draw()" />
+                    Show points
+                </label>
+            </div>
+        </div>
+
+        <div class="control-section">
+            <h4>Actions</h4>
+
+            <div class="button-group">
+                <button class="btn-refresh" [disabled]="!selectedAssetId" (click)="refreshTailMap()"
+                    title="Refresh tail map data">
+                    Refresh
+                </button>
+
+                <button class="btn-export" [disabled]="!imageLoaded || history.length === 0" (click)="exportTailMap()"
+                    [title]="history.length === 0 ? 'No trail to export' : 'Export tail map as PNG'">
+                    Export
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="tailmap-canvas-container">
+        <canvas #tailCanvas class="tailmap-canvas" (mousedown)="onMouseDown($event)" (mousemove)="onMouseMove($event)"
+            (mouseup)="onMouseUp()" (mouseleave)="onMouseUp()" (wheel)="onWheel($event)"></canvas>
+
+        <div *ngIf="!imageLoaded" class="loading-placeholder">
+            <p>Loading tail map.</p>
+        </div>
+    </div>
+
+    <div class="tailmap-info" *ngIf="imageLoaded">
+        <p>Points: {{ history.length }}</p>
+    </div>
+</div>

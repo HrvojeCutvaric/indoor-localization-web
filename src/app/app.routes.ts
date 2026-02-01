@@ -41,7 +41,7 @@ export const routes: Routes = [
   {
     path: 'reports/zone-retention',
     loadComponent: () =>
-      import('./features/reports/zone-retention.placeholder')
-        .then(m => m.ZoneRetentionPlaceholder),
+      import('./features/reports/components/zone-retention-report/zone-retention-report')
+        .then(m => m.ZoneRetentionReportComponent),
   },
 ];

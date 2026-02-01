@@ -20,9 +20,24 @@
                 </button>
 
                 <button class="nav-link" [class.is-active]="activeSection === 'reports'"
-                    (click)="setActiveSection('reports')">
+                    (click)="toggleReportsMenu($event)">
                     Reports
                 </button>
+
+                <!-- Reports burger menu -->
+                <div class="reports-burger">
+                    <button class="burger-btn" (click)="toggleReportsMenu($event)" aria-label="Open reports menu">
+                        <span class="bar"></span>
+                        <span class="bar"></span>
+                        <span class="bar"></span>
+                    </button>
+
+                    <div class="reports-menu" *ngIf="showReportsMenu" (click)="$event.stopPropagation()">
+                        <a (click)="navigateToReport('/reports/heatmap')">Heatmap</a>
+                        <a (click)="navigateToReport('/reports/trail-map')">Trail Map</a>
+                        <a (click)="navigateToReport('/reports/zone-retention')">Zone Retention</a>
+                    </div>
+                </div>
             </nav>
         </div>
 
@@ -50,7 +65,13 @@
 
         <section *ngIf="activeSection === 'reports'" class="section section-reports">
             <h2>Reports</h2>
-            <p>Reports module will be available soon.</p>
+            <p>Select a report using the burger menu in the header, or use the shortcuts below to open a report page.</p>
+
+            <div class="report-links">
+                <button class="btn" (click)="navigateToReport('/reports/heatmap')">Open Heatmap</button>
+                <button class="btn" (click)="navigateToReport('/reports/trail-map')">Open Trail Map</button>
+                <button class="btn" (click)="navigateToReport('/reports/zone-retention')">Open Zone Retention</button>
+            </div>
         </section>
     </main>
 </div>

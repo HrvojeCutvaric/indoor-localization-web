@@ -25,4 +25,23 @@ export const routes: Routes = [
       import('./features/maps/map-management')
         .then(m => m.MapManagement),
   },
+  // Report routes
+  {
+    path: 'reports/heatmap',
+    loadComponent: () =>
+      import('./features/reports/components/heatmap-canvas/heatmap-canvas')
+        .then(m => m.HeatmapCanvasComponent),
+  },
+  {
+    path: 'reports/trail-map',
+    loadComponent: () =>
+      import('./features/reports/components/tail-map-canvas/tail-map-canvas')
+        .then(m => m.TailMapCanvasComponent),
+  },
+  {
+    path: 'reports/zone-retention',
+    loadComponent: () =>
+      import('./features/reports/zone-retention.placeholder')
+        .then(m => m.ZoneRetentionPlaceholder),
+  },
 ];

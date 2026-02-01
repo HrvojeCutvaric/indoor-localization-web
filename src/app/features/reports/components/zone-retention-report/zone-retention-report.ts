@@ -197,6 +197,7 @@ export class ZoneRetentionReportComponent implements OnInit, OnDestroy {
                         if (this.retentionData.length > 0) {
                             console.log('First item:', this.retentionData[0]);
                         }
+                        this.filterDataByDateRange();
                         this.enrichRetentionData();
                     } catch (parseError) {
                         console.error('Error parsing retention data:', parseError);
@@ -220,9 +221,46 @@ export class ZoneRetentionReportComponent implements OnInit, OnDestroy {
             });
     }
 
-    /**
-     * Enrich retention data with calculated fields
-     */
+    private filterDataByDateRange(): void {
+        if (!this.filterStartDate && !this.filterEndDate) {
+            console.log('No date filter applied');
+            return;
+        }
+
+        const startMs = this.filterStartDate ? new Date(this.filterStartDate).getTime() : null;
+        const endMs = this.filterEndDate ? new Date(this.filterEndDate).getTime() : null;
+
+        console.log('Client-side date filtering:', { 
+            filterStartDate: this.filterStartDate, 
+            filterEndDate: this.filterEndDate,
+            startMs, 
+            endMs,
+            beforeCount: this.retentionData.length 
+        });
+
+        this.retentionData = this.retentionData.filter((entry: any) => {
+            const enterTime = entry.enterDateTime || entry.EnterDateTime || entry.entryDateTime || entry.EntryDateTime || entry.enterTime || entry.EnterTime;
+            if (!enterTime) return true;
+
+            const entryMs = new Date(enterTime).getTime();
+            if (isNaN(entryMs)) return true;
+
+            if (startMs && entryMs < startMs) return false;
+            if (endMs && entryMs > endMs) return false;
+            return true;
+        });
+
+        console.log('After date filtering:', this.retentionData.length, 'records');
+
+        this.paginatedData = {
+            items: this.retentionData,
+            totalCount: this.retentionData.length,
+            pageNumber: 1,
+            pageSize: this.pageSize,
+            totalPages: Math.ceil(this.retentionData.length / this.pageSize),
+        };
+    }
+
     private enrichRetentionData(): void {
         console.log('Raw retention data before enrichment:', this.retentionData);
         console.log('First item structure:', this.retentionData[0]);

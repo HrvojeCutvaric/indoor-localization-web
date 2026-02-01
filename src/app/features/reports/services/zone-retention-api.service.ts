@@ -4,9 +4,6 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ApiResponse } from '../../../core/services/api-response.model';
 
-/**
- * Zone Retention Report Data Models
- */
 export interface ZoneRetentionEntry {
     id: string;
     assetId: number;
@@ -41,9 +38,6 @@ export class ZoneRetentionApiService {
     private http = inject(HttpClient);
     private apiUrl = `${environment.apiUrl}/Reports/zones/retention`;
 
-    /**
-     * Get zone retention data with optional filtering and pagination
-     */
     getZoneRetention(filters?: ZoneRetentionFilters): Observable<ApiResponse<ZoneRetentionResponse>> {
         let params = new HttpParams();
 
@@ -55,10 +49,16 @@ export class ZoneRetentionApiService {
                 params = params.set('zoneId', filters.zoneId.toString());
             }
             if (filters.startDate) {
-                params = params.set('startDate', filters.startDate);
+                const startDate = new Date(filters.startDate);
+                if (!isNaN(startDate.getTime())) {
+                    params = params.set('startDate', startDate.toISOString());
+                }
             }
             if (filters.endDate) {
-                params = params.set('endDate', filters.endDate);
+                const endDate = new Date(filters.endDate);
+                if (!isNaN(endDate.getTime())) {
+                    params = params.set('endDate', endDate.toISOString());
+                }
             }
             if (filters.pageNumber !== undefined) {
                 params = params.set('pageNumber', filters.pageNumber.toString());

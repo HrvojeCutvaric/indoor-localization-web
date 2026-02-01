@@ -172,13 +172,10 @@ export class TailMapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
             .pipe(takeUntil(this.destroy$))
             .subscribe({
                 next: (records) => {
-                    // Parse datetime-local strings as local time for proper comparison
-                    // datetime-local format is YYYY-MM-DDTHH:mm which represents LOCAL time
                     let start: Date | undefined = undefined;
                     let end: Date | undefined = undefined;
 
                     if (this.startDate) {
-                        // Parse as local time - new Date() treats strings without Z as local time
                         start = new Date(this.startDate);
                         if (isNaN(start.getTime())) {
                             start = undefined;
@@ -189,7 +186,6 @@ export class TailMapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
                     }
 
                     if (this.endDate) {
-                        // Parse as local time - new Date() treats strings without Z as local time
                         end = new Date(this.endDate);
                         if (isNaN(end.getTime())) {
                             end = undefined;
@@ -204,10 +200,8 @@ export class TailMapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
                         const startTime = start?.getTime();
                         const endTime = end?.getTime();
                         
-                        // Debug: log sample record to see timestamp field format
                         if (filtered.length > 0) {
                             const sample = filtered[0];
-                            // The API returns 'dateTime' field, not 'timestamp'
                             const sampleTs = (sample as any).dateTime || sample.timestamp;
                             console.log('%c🔍 TRAIL FILTER DEBUG', 'background: orange; color: black; font-weight: bold', {
                                 startTime,
@@ -225,7 +219,6 @@ export class TailMapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
                         
                         console.log('Before filtering:', filtered.length, 'records');
                         filtered = filtered.filter((r) => {
-                            // The API returns 'dateTime' field, not 'timestamp'
                             const timestampValue = (r as any).dateTime || r.timestamp || (r as any).DateTime;
                             if (!timestampValue) {
                                 console.warn('No timestamp field in record:', r);

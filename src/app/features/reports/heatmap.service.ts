@@ -40,13 +40,8 @@ export class HeatmapService {
     private heatmapDataSubject = new BehaviorSubject<HeatmapData | null>(null);
     heatmapData$ = this.heatmapDataSubject.asObservable();
 
-    // Color palette for assets
     private colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8'];
 
-    /**
-     * Fetch heatmap data from asset position history for a floor map
-     * Gets all assets on the floor map and their position history
-     */
     generateHeatmapData(
         floorMapId: string | number,
         startDate?: Date,
@@ -60,7 +55,6 @@ export class HeatmapService {
             hasEndDate: !!endDate
         });
         
-        // Fetch all assets for this floor map
         return this.http.get<any>(`${this.assetApiUrl}/floormap/${floorMapId}`).pipe(
             switchMap((response) => {
                 const assets = response.data || response;
@@ -68,7 +62,6 @@ export class HeatmapService {
                     return of(this.createEmptyHeatmap(floorMapId));
                 }
 
-                // Fetch position history for each asset
                 const historyRequests = assets.map((asset) =>
                     this.http.get<any>(`${this.assetApiUrl}/${asset.id}/history/position`).pipe(
                         map((histResponse) => ({
@@ -106,9 +99,6 @@ export class HeatmapService {
         );
     }
 
-    /**
-     * Build heatmap data from asset position history
-     */
     private buildHeatmapFromHistory(
         floorMapId: string | number,
         assetHistoryResults: Array<{ asset: any; history: any[] }>,
@@ -118,7 +108,6 @@ export class HeatmapService {
         const trails: AssetTrail[] = [];
         const allPoints: HeatmapDataPoint[] = [];
 
-        // Convert dates to timestamps for comparison
         const startMs = startDate ? startDate.getTime() : null;
         const endMs = endDate ? endDate.getTime() : null;
         
@@ -133,27 +122,23 @@ export class HeatmapService {
 
             const originalCount = history.length;
             
-            // Log first record to see the timestamp format
             if (history.length > 0) {
                 console.log(`Asset ${asset.id} sample record:`, history[0]);
             }
 
-            // FILTER: Only include records within the date range
             let filteredHistory = history;
             if (startMs !== null || endMs !== null) {
                 filteredHistory = history.filter((record) => {
-                    // Get timestamp - the field is called 'dateTime' in the API response
                     const tsValue = record.dateTime || record.DateTime || record.timestamp || record.Timestamp || record.createdAt || record.time;
                     if (!tsValue) {
-                        return false; // Skip records without timestamp
+                        return false;
                     }
                     
                     const recordMs = new Date(tsValue).getTime();
                     if (isNaN(recordMs)) {
-                        return false; // Skip invalid timestamps
+                        return false;
                     }
                     
-                    // Check range
                     if (startMs !== null && recordMs < startMs) {
                         return false;
                     }
@@ -170,15 +155,13 @@ export class HeatmapService {
                 return;
             }
 
-            // Sort by dateTime ascending
             filteredHistory.sort(
                 (a, b) =>
                     new Date(a.dateTime || a.timestamp).getTime() - new Date(b.dateTime || b.timestamp).getTime()
             );
 
-            // Create trail points with intensity based on recency
             const points = filteredHistory.map((record, i) => {
-                const intensity = 0.3 + (i / filteredHistory.length) * 0.7; // 0.3 to 1.0
+                const intensity = 0.3 + (i / filteredHistory.length) * 0.7;
                 return {
                     x: record.x || 0,
                     y: record.y || 0,
@@ -187,7 +170,6 @@ export class HeatmapService {
                 };
             });
 
-            // Add trail
             trails.push({
                 assetId: asset.id,
                 assetName: asset.name || `Asset ${asset.id}`,
@@ -195,7 +177,6 @@ export class HeatmapService {
                 points,
             });
 
-            // Add points to heatmap
             points.forEach((p) => {
                 allPoints.push({
                     x: p.x,
@@ -205,7 +186,6 @@ export class HeatmapService {
             });
         });
 
-        // Calculate intensity bounds
         if (allPoints.length === 0) {
             console.log('%cFINAL RESULT: No points after filtering', 'background: red; color: white; font-weight: bold');
             return this.createEmptyHeatmap(floorMapId);
@@ -231,9 +211,6 @@ export class HeatmapService {
         };
     }
 
-    /**
-     * Create empty heatmap when no data available
-     */
     private createEmptyHeatmap(floorMapId: string | number): HeatmapData {
         return {
             mapId: floorMapId,
@@ -244,56 +221,40 @@ export class HeatmapService {
         };
     }
 
-    /**
-     * Update heatmap data and notify subscribers
-     */
     updateHeatmapData(data: HeatmapData): void {
         this.heatmapDataSubject.next(data);
     }
 
-    /**
-     * Get current heatmap data
-     */
     getHeatmapData(): HeatmapData | null {
         return this.heatmapDataSubject.value;
     }
 
-    /**
-     * Convert intensity value to color (blue -> green -> yellow -> red)
-     */
     getColorForIntensity(intensity: number, minIntensity: number = 0, maxIntensity: number = 1): string {
-        // Normalize intensity to 0-1 range
         const normalized = maxIntensity > minIntensity 
             ? (intensity - minIntensity) / (maxIntensity - minIntensity)
             : 0;
 
-        // Clamp to 0-1
         const clamped = Math.max(0, Math.min(1, normalized));
 
-        // Color gradient: blue -> cyan -> green -> yellow -> red
         if (clamped < 0.25) {
-            // Blue to Cyan
             const t = clamped / 0.25;
             const r = 0;
             const g = Math.round(255 * t);
             const b = 255;
             return `rgb(${r}, ${g}, ${b})`;
         } else if (clamped < 0.5) {
-            // Cyan to Green
             const t = (clamped - 0.25) / 0.25;
             const r = 0;
             const g = 255;
             const b = Math.round(255 * (1 - t));
             return `rgb(${r}, ${g}, ${b})`;
         } else if (clamped < 0.75) {
-            // Green to Yellow
             const t = (clamped - 0.5) / 0.25;
             const r = Math.round(255 * t);
             const g = 255;
             const b = 0;
             return `rgb(${r}, ${g}, ${b})`;
         } else {
-            // Yellow to Red
             const t = (clamped - 0.75) / 0.25;
             const r = 255;
             const g = Math.round(255 * (1 - t));
@@ -302,9 +263,6 @@ export class HeatmapService {
         }
     }
 
-    /**
-     * Generate radial gradient for smooth heatmap visualization
-     */
     generateGradient(
         ctx: CanvasRenderingContext2D,
         x: number,
@@ -317,7 +275,6 @@ export class HeatmapService {
         const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
         
         const color = this.getColorForIntensity(intensity, minIntensity, maxIntensity);
-        // Convert rgb to rgba for transparency
         const rgbMatch = color.match(/\d+/g);
         if (rgbMatch && rgbMatch.length === 3) {
             const [r, g, b] = rgbMatch;

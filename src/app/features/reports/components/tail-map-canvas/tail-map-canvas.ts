@@ -50,6 +50,7 @@ export class TailMapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
     startDate = '';
     endDate = '';
     dateRangeApplied = false;
+    dataLoading = false;
 
     trailLineWidth = 3;
     showPoints = true;
@@ -164,38 +165,94 @@ export class TailMapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
         if (!this.selectedAssetId || this.isGenerating) return;
 
         this.isGenerating = true;
+        this.dataLoading = true;
 
         this.tailMapService
             .getAssetPositionHistory(this.selectedAssetId)
             .pipe(takeUntil(this.destroy$))
             .subscribe({
                 next: (records) => {
-                    const start = this.startDate ? new Date(this.startDate) : undefined;
-                    const end = this.endDate ? new Date(this.endDate) : undefined;
+                    let start: Date | undefined = undefined;
+                    let end: Date | undefined = undefined;
+
+                    if (this.startDate) {
+                        start = new Date(this.startDate);
+                        if (isNaN(start.getTime())) {
+                            start = undefined;
+                            console.error('Invalid trail startDate:', this.startDate);
+                        } else {
+                            console.log('Parsed trail startDate (local):', { input: this.startDate, parsed: start.toString(), time: start.getTime() });
+                        }
+                    }
+
+                    if (this.endDate) {
+                        end = new Date(this.endDate);
+                        if (isNaN(end.getTime())) {
+                            end = undefined;
+                            console.error('Invalid trail endDate:', this.endDate);
+                        } else {
+                            console.log('Parsed trail endDate (local):', { input: this.endDate, parsed: end.toString(), time: end.getTime() });
+                        }
+                    }
 
                     let filtered = records ?? [];
                     if (start || end) {
+                        const startTime = start?.getTime();
+                        const endTime = end?.getTime();
+                        
+                        if (filtered.length > 0) {
+                            const sample = filtered[0];
+                            const sampleTs = (sample as any).dateTime || sample.timestamp;
+                            console.log('%c🔍 TRAIL FILTER DEBUG', 'background: orange; color: black; font-weight: bold', {
+                                startTime,
+                                endTime,
+                                startStr: start?.toString(),
+                                endStr: end?.toString(),
+                                totalRecords: filtered.length,
+                                sampleRecord: sample,
+                                allKeys: Object.keys(sample),
+                                sampleTimestampValue: sampleTs,
+                                sampleTimestampParsed: new Date(sampleTs).toString(),
+                                sampleTimestampMs: new Date(sampleTs).getTime()
+                            });
+                        }
+                        
+                        console.log('Before filtering:', filtered.length, 'records');
                         filtered = filtered.filter((r) => {
-                            const t = new Date(r.timestamp);
-                            if (start && t < start) return false;
-                            if (end && t > end) return false;
-                            return true;
+                            const timestampValue = (r as any).dateTime || r.timestamp || (r as any).DateTime;
+                            if (!timestampValue) {
+                                console.warn('No timestamp field in record:', r);
+                                return false;
+                            }
+                            const t = new Date(timestampValue).getTime();
+                            if (isNaN(t)) {
+                                console.warn('Invalid timestamp:', timestampValue);
+                                return false;
+                            }
+                            const include = (!startTime || t >= startTime) && (!endTime || t <= endTime);
+                            return include;
                         });
+                        console.log('After filtering:', filtered.length, 'records');
                     }
 
                     filtered.sort(
-                        (a, b) =>
-                            new Date(a.timestamp).getTime() -
-                            new Date(b.timestamp).getTime()
+                        (a, b) => {
+                            const tsA = (a as any).dateTime || a.timestamp;
+                            const tsB = (b as any).dateTime || b.timestamp;
+                            return new Date(tsA).getTime() - new Date(tsB).getTime();
+                        }
                     );
 
                     this.history = filtered;
-                    this.draw();
                     this.isGenerating = false;
+                    this.dataLoading = false;
+                    console.log('Trail data loaded:', filtered.length, 'records');
+                    this.draw();
                 },
                 error: (err) => {
                     console.error('Failed to load tail history:', err);
                     this.isGenerating = false;
+                    this.dataLoading = false;
                 },
             });
     }
@@ -208,6 +265,7 @@ export class TailMapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
     applyDateRange(): void {
         if (!this.startDate && !this.endDate) return;
         this.dateRangeApplied = true;
+        console.log('Applying date range filter:', { start: this.startDate, end: this.endDate });
         if (this.selectedAssetId) this.generateTailMap();
     }
 
@@ -215,6 +273,7 @@ export class TailMapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
         this.startDate = '';
         this.endDate = '';
         this.dateRangeApplied = false;
+        this.dataLoading = false;
 
         if (this.selectedAssetId) {
             this.generateTailMap();
@@ -292,14 +351,14 @@ export class TailMapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
         const first = this.history[0];
         this.ctx.moveTo(
             this.offsetX + first.x * this.pxPerMeterX,
-            this.offsetY + first.y * this.pxPerMeterY
+            this.offsetY + (this.floorHeightMeters - first.y) * this.pxPerMeterY
         );
 
         for (let i = 1; i < this.history.length; i++) {
             const p = this.history[i];
             this.ctx.lineTo(
                 this.offsetX + p.x * this.pxPerMeterX,
-                this.offsetY + p.y * this.pxPerMeterY
+                this.offsetY + (this.floorHeightMeters - p.y) * this.pxPerMeterY
             );
         }
 
@@ -314,7 +373,7 @@ export class TailMapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
                 this.ctx.beginPath();
                 this.ctx.arc(
                     this.offsetX + p.x * this.pxPerMeterX,
-                    this.offsetY + p.y * this.pxPerMeterY,
+                    this.offsetY + (this.floorHeightMeters - p.y) * this.pxPerMeterY,
                     3,
                     0,
                     Math.PI * 2

@@ -144,14 +144,12 @@
     border-radius: 2px;
 }
 
-/* ✅ Slider row: drži slider + value u istoj liniji (kao Heatmap) */
 .slider-row {
     display: flex;
     align-items: center;
     gap: 0.75rem;
 }
 
-/* ✅ FIX: slider thumb centriran na track (više ne “lebdi”) */
 .slider {
     width: 150px;
     margin: 0;
@@ -161,7 +159,6 @@
     -webkit-appearance: none;
     appearance: none;
 
-    /* Track */
     &::-webkit-slider-runnable-track {
         height: 6px;
         border-radius: 3px;
@@ -174,7 +171,6 @@
         background: linear-gradient(to right, #ddd, #999);
     }
 
-    /* Thumb */
     &::-webkit-slider-thumb {
         -webkit-appearance: none;
         appearance: none;
@@ -183,7 +179,7 @@
         border-radius: 50%;
         background: #2196f3;
         cursor: pointer;
-        margin-top: -6px; // ⭐ centriranje thumb-a na 6px track
+        margin-top: -6px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
 
@@ -205,7 +201,6 @@
     font-weight: 500;
 }
 
-/* ✅ Actions (Refresh/Export) kao u Heatmapu */
 .button-group {
     display: flex;
     gap: 0.75rem;

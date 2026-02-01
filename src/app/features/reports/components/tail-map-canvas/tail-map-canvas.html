@@ -1,6 +1,5 @@
 <div class="tailmap-container">
     <div class="tailmap-controls">
-        <!-- Asset -->
         <div class="control-section">
             <h4>Asset</h4>
 
@@ -23,7 +22,6 @@
             </div>
         </div>
 
-        <!-- Date range -->
         <div class="control-section">
             <h4>Date Range Filter</h4>
 
@@ -47,7 +45,6 @@
             </div>
         </div>
 
-        <!-- Visualization -->
         <div class="control-section">
             <h4>Visualization</h4>
 
@@ -69,7 +66,6 @@
             </div>
         </div>
 
-        <!-- Actions -->
         <div class="control-section">
             <h4>Actions</h4>
 
@@ -87,7 +83,6 @@
         </div>
     </div>
 
-    <!-- Canvas -->
     <div class="tailmap-canvas-container">
         <canvas #tailCanvas class="tailmap-canvas" (mousedown)="onMouseDown($event)" (mousemove)="onMouseMove($event)"
             (mouseup)="onMouseUp()" (mouseleave)="onMouseUp()" (wheel)="onWheel($event)"></canvas>
@@ -97,7 +92,6 @@
         </div>
     </div>
 
-    <!-- Info -->
     <div class="tailmap-info" *ngIf="imageLoaded">
         <p>Points: {{ history.length }}</p>
     </div>

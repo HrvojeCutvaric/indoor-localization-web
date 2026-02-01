@@ -44,8 +44,6 @@ export class TailMapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
     selectedMap: Map | null = null;
     private canvasReady = false;
 
-    /* ───────────────── UI state ───────────────── */
-
     assets: AssetOnFloorMap[] = [];
     selectedAssetId: number | null = null;
 
@@ -56,14 +54,9 @@ export class TailMapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
     trailLineWidth = 3;
     showPoints = true;
 
-    /** UX: Generate button loading state */
     isGenerating = false;
 
-    /* ───────────────── Data ───────────────── */
-
     history: AssetPositionHistoryRecord[] = [];
-
-    /* ───────────────── Canvas transform ───────────────── */
 
     private scale = 1;
     private baseScale = 1;
@@ -81,8 +74,6 @@ export class TailMapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
     private pxPerMeterX = 1;
     private pxPerMeterY = 1;
 
-    /* ───────────────── Lifecycle ───────────────── */
-
     @HostListener('window:resize')
     onResize(): void {
         if (!this.imageLoaded) return;
@@ -92,13 +83,11 @@ export class TailMapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
     }
 
     ngOnInit(): void {
-        // ✅ ključ: slušaj selectedMap$ (radi i za deep-link i refresh)
         this.mapService.selectedMap$
             .pipe(takeUntil(this.destroy$))
             .subscribe((mapValue) => {
                 this.selectedMap = mapValue;
 
-                // reset state kad nema mape
                 if (!this.selectedMap?.image) {
                     this.imageLoaded = false;
                     this.mapImagePath = '';
@@ -114,12 +103,10 @@ export class TailMapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
                 if (this.selectedMap.widthInMeters) this.floorWidthMeters = this.selectedMap.widthInMeters;
                 if (this.selectedMap.heightInMeters) this.floorHeightMeters = this.selectedMap.heightInMeters;
 
-                // assets za dropdown
                 if (this.selectedMap.id != null) {
                     this.loadAssetsForMap(Number(this.selectedMap.id));
                 }
 
-                // sliku loadamo tek kad canvas postoji
                 if (this.canvasReady) {
                     this.loadMapImageAndInit();
                 }
@@ -131,7 +118,6 @@ export class TailMapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
         this.ctx = canvas.getContext('2d')!;
         this.canvasReady = true;
 
-        // ako je mapa već restoreana prije view init-a
         if (this.selectedMap?.image) {
             this.loadMapImageAndInit();
         }
@@ -160,8 +146,6 @@ export class TailMapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
         image.src = this.mapImagePath;
     }
 
-    /* ───────────────── Data loading ───────────────── */
-
     private loadAssetsForMap(floorMapId: number): void {
         this.tailMapService
             .getAssetsByFloorMap(floorMapId)
@@ -175,8 +159,6 @@ export class TailMapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
         this.history = [];
         this.draw();
     }
-
-    /* ───────────────── Generate / UX ───────────────── */
 
     generateTailMap(): void {
         if (!this.selectedAssetId || this.isGenerating) return;
@@ -253,8 +235,6 @@ export class TailMapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
         link.href = canvas.toDataURL('image/png');
         link.click();
     }
-
-    /* ───────────────── Canvas core ───────────────── */
 
     private initCanvas(): void {
         const canvas = this.canvasRef.nativeElement;
@@ -346,8 +326,6 @@ export class TailMapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
 
         this.ctx.restore();
     }
-
-    /* ───────────────── Interactions ───────────────── */
 
     onMouseDown(event: MouseEvent): void {
         this.isDragging = true;

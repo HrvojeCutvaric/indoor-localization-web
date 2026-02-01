@@ -35,8 +35,8 @@ export const routes: Routes = [
   {
     path: 'reports/trail-map',
     loadComponent: () =>
-      import('./features/reports/trail-map.placeholder')
-        .then(m => m.TrailMapPlaceholder),
+      import('./features/reports/components/tail-map-canvas/tail-map-canvas')
+        .then(m => m.TailMapCanvasComponent),
   },
   {
     path: 'reports/zone-retention',

@@ -13,7 +13,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { MapService } from '../../../../core/services/map.service';
+import { MapService, type Map } from '../../../../core/services/map.service';
 import { HeatmapService, HeatmapData } from '../../heatmap.service';
 
 @Component({
@@ -42,7 +42,9 @@ export class HeatmapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
   showHeatmap = true;
   heatmapOpacity = 0.6;
   heatmapRadius = 50;
-  selectedMap = this.mapService.getSelectedMap();
+
+  selectedMap: Map | null = null;
+  private canvasReady = false;
 
   // Canvas scaling
   private scale = 1;
@@ -50,6 +52,7 @@ export class HeatmapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
   private offsetY = 0;
   private minScale = 0.5;
   private maxScale = 4;
+  private baseScale = 1;
 
   // Dragging
   private isDragging = false;
@@ -75,49 +78,79 @@ export class HeatmapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
   onResize() {
     if (!this.imageLoaded) return;
     this.initCanvas();
+    this.setupScaleAndOffset();
     this.draw();
   }
 
   ngOnInit(): void {
-    const selectedMap = this.mapService.getSelectedMap();
-    if (selectedMap && selectedMap.image) {
-      this.mapImagePath = this.mapService.getFullImageUrl(selectedMap.image);
-      if (selectedMap.widthInMeters) {
-        this.floorWidthMeters = selectedMap.widthInMeters;
-      }
-      if (selectedMap.heightInMeters) {
-        this.floorHeightMeters = selectedMap.heightInMeters;
-      }
-    }
+    // ✅ ključ: slušaj selectedMap$ (radi i za deep-link i refresh)
+    this.mapService.selectedMap$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((mapValue) => {
+        this.selectedMap = mapValue;
 
-    // Load heatmap data
-    this.loadHeatmapData();
+        if (!this.selectedMap?.image) {
+          // reset state ako nema mape
+          this.imageLoaded = false;
+          this.mapImagePath = '';
+          this.heatmapData = null;
+          this.draw();
+          return;
+        }
+
+        this.mapImagePath = this.mapService.getFullImageUrl(this.selectedMap.image);
+
+        if (this.selectedMap.widthInMeters) {
+          this.floorWidthMeters = this.selectedMap.widthInMeters;
+        }
+        if (this.selectedMap.heightInMeters) {
+          this.floorHeightMeters = this.selectedMap.heightInMeters;
+        }
+
+        // Load heatmap data (tek kad imamo mapu)
+        this.loadHeatmapData();
+
+        // Image load tek kad canvas postoji
+        if (this.canvasReady) {
+          this.loadMapImageAndInit();
+        }
+      });
   }
 
   ngAfterViewInit(): void {
-    if (this.canvasRef) {
-      const canvas = this.canvasRef.nativeElement;
-      this.ctx = canvas.getContext('2d')!;
-      
-      const image = new Image();
-      image.onload = () => {
-        this.image = image;
-        this.imageLoaded = true;
-        this.initCanvas();
-        this.setupScaleAndOffset();
-        this.cdr.detectChanges();
-        this.draw();
-      };
-      image.onerror = () => {
-        console.error('Failed to load map image');
-      };
-      image.src = this.mapImagePath;
+    const canvas = this.canvasRef.nativeElement;
+    this.ctx = canvas.getContext('2d')!;
+    this.canvasReady = true;
+
+    // Ako je mapa već restoreana prije view init-a
+    if (this.selectedMap?.image) {
+      this.loadMapImageAndInit();
     }
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  private loadMapImageAndInit(): void {
+    if (!this.mapImagePath) return;
+
+    this.imageLoaded = false;
+
+    const image = new Image();
+    image.onload = () => {
+      this.image = image;
+      this.imageLoaded = true;
+      this.initCanvas();
+      this.setupScaleAndOffset();
+      this.cdr.detectChanges();
+      this.draw();
+    };
+    image.onerror = () => {
+      console.error('Failed to load map image');
+    };
+    image.src = this.mapImagePath;
   }
 
   /**
@@ -130,6 +163,7 @@ export class HeatmapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
     const endDate = this.endDate ? new Date(this.endDate) : undefined;
 
     console.log('Loading heatmap with date range:', { startDate, endDate });
+
     this.heatmapService
       .generateHeatmapData(this.selectedMap.id, startDate, endDate)
       .pipe(takeUntil(this.destroy$))
@@ -304,7 +338,7 @@ export class HeatmapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
       }
 
       // Draw dots at each point along the trail
-      trail.points.forEach((point, idx) => {
+      trail.points.forEach((point) => {
         const screenX = this.offsetX + point.x * this.pxPerMeterX;
         const screenY = this.offsetY + point.y * this.pxPerMeterY;
 
@@ -454,6 +488,4 @@ export class HeatmapCanvasComponent implements OnInit, AfterViewInit, OnDestroy 
       this.draw();
     }
   }
-
-  private baseScale = 1;
 }

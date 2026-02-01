@@ -1,0 +1,215 @@
+<div class="zone-retention-report-container">
+    <!-- Header -->
+    <div class="report-header">
+        <h1>Zone Retention Report</h1>
+        <p class="subtitle">Track asset retention times in zones</p>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+        <h3>Filters</h3>
+        <form class="filter-form">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="assetFilter">Asset</label>
+                    <select
+                        id="assetFilter"
+                        [(ngModel)]="filterAssetId"
+                        name="assetId"
+                        class="filter-input"
+                    >
+                        <option [value]="null">-- All Assets --</option>
+                        <option *ngFor="let asset of availableAssets" [value]="asset.id">
+                            {{ asset.name }}
+                        </option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="zoneFilter">Zone</label>
+                    <select
+                        id="zoneFilter"
+                        [(ngModel)]="filterZoneId"
+                        name="zoneId"
+                        class="filter-input"
+                    >
+                        <option [value]="null">-- All Zones --</option>
+                        <option *ngFor="let zone of availableZones" [value]="zone.id">
+                            {{ zone.name }}
+                        </option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="startDate">Start Date</label>
+                    <input
+                        id="startDate"
+                        type="datetime-local"
+                        [(ngModel)]="filterStartDate"
+                        name="startDate"
+                        class="filter-input"
+                    />
+                </div>
+
+                <div class="filter-group">
+                    <label for="endDate">End Date</label>
+                    <input
+                        id="endDate"
+                        type="datetime-local"
+                        [(ngModel)]="filterEndDate"
+                        name="endDate"
+                        class="filter-input"
+                    />
+                </div>
+            </div>
+
+            <div class="filter-actions">
+                <button type="button" class="btn btn-primary" (click)="applyFilters()">
+                    Apply Filters
+                </button>
+                <button type="button" class="btn btn-secondary" (click)="resetFilters()">
+                    Reset
+                </button>
+                <button type="button" class="btn btn-tertiary" (click)="exportToCSV()">
+                    Export to CSV
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Error Message -->
+    <div *ngIf="error" class="error-message">
+        {{ error }}
+    </div>
+
+    <!-- Debug Info (Remove in Production) -->
+    <div *ngIf="retentionData.length > 0" style="background: #f0f0f0; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; font-size: 0.85rem; overflow-x: auto;">
+        <details>
+            <summary>Debug Info - First Entry (Click to expand)</summary>
+            <div style="margin-top: 0.5rem;">
+                <p><strong>Full Object:</strong></p>
+                <pre>{{ retentionData[0] | json }}</pre>
+                <p><strong>Key Fields:</strong></p>
+                <pre>
+Enter Time: {{ retentionData[0].enterDateTime }}
+Exit Time: {{ retentionData[0].exitDateTime }}
+Retention Minutes: {{ retentionData[0].retentionMinutes }}
+Formatted: {{ formatRetentionTime(retentionData[0].retentionMinutes) }}</pre>
+            </div>
+        </details>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-state">
+        <div class="spinner"></div>
+        <p>Loading retention data...</p>
+    </div>
+
+    <!-- Data Grid -->
+    <div *ngIf="!loading && retentionData.length > 0" class="data-section">
+        <div class="data-header">
+            <h3>Retention History ({{ paginatedData.totalCount }} total entries)</h3>
+        </div>
+
+        <div class="table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th (click)="sortByColumn('assetName')" class="sortable">
+                            Asset Name {{ getSortIndicator('assetName') }}
+                        </th>
+                        <th (click)="sortByColumn('zoneName')" class="sortable">
+                            Zone Name {{ getSortIndicator('zoneName') }}
+                        </th>
+                        <th (click)="sortByColumn('enterDateTime')" class="sortable">
+                            Entry Time {{ getSortIndicator('enterDateTime') }}
+                        </th>
+                        <th (click)="sortByColumn('exitDateTime')" class="sortable">
+                            Exit Time {{ getSortIndicator('exitDateTime') }}
+                        </th>
+                        <th (click)="sortByColumn('retentionMinutes')" class="sortable">
+                            Retention Time {{ getSortIndicator('retentionMinutes') }}
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let entry of retentionData" class="data-row">
+                        <td class="asset-name">{{ entry.assetName }}</td>
+                        <td class="zone-name">{{ entry.zoneName }}</td>
+                        <td class="datetime">{{ formatDateTime(entry.enterDateTime) }}</td>
+                        <td class="datetime">{{ formatDateTime(entry.exitDateTime) }}</td>
+                        <td
+                            class="retention-time"
+                            [ngClass]="getRetentionTimeClass(entry.retentionMinutes)"
+                        >
+                            {{ formatRetentionTime(entry.retentionMinutes) }}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination-section">
+            <div class="pagination-info">
+                Showing {{ (currentPage - 1) * pageSize + 1 }} to
+                {{ Math.min(currentPage * pageSize, paginatedData.totalCount) }}
+                of {{ paginatedData.totalCount }} entries
+            </div>
+
+            <div class="pagination-controls">
+                <button
+                    class="btn btn-sm"
+                    (click)="previousPage()"
+                    [disabled]="currentPage === 1"
+                >
+                    ← Previous
+                </button>
+
+                <div class="page-numbers">
+                    <button
+                        *ngIf="currentPage > 3"
+                        class="btn btn-sm"
+                        (click)="goToPage(1)"
+                    >
+                        1
+                    </button>
+                    <span *ngIf="currentPage > 4" class="page-ellipsis">...</span>
+
+                    <button
+                        *ngFor="let page of getPageNumbers()"
+                        class="btn btn-sm"
+                        [class.active]="page === currentPage"
+                        (click)="goToPage(page)"
+                    >
+                        {{ page }}
+                    </button>
+
+                    <span *ngIf="currentPage < paginatedData.totalPages - 3" class="page-ellipsis"
+                        >...</span
+                    >
+                    <button
+                        *ngIf="currentPage < paginatedData.totalPages - 2"
+                        class="btn btn-sm"
+                        (click)="goToPage(paginatedData.totalPages)"
+                    >
+                        {{ paginatedData.totalPages }}
+                    </button>
+                </div>
+
+                <button
+                    class="btn btn-sm"
+                    (click)="nextPage()"
+                    [disabled]="currentPage === paginatedData.totalPages"
+                >
+                    Next →
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!loading && retentionData.length === 0 && !error" class="empty-state">
+        <p>No retention data found. Try adjusting your filters.</p>
+    </div>
+</div>

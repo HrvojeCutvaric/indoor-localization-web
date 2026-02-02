@@ -35,13 +35,13 @@ export const routes: Routes = [
   {
     path: 'reports/trail-map',
     loadComponent: () =>
-      import('./features/reports/trail-map.placeholder')
-        .then(m => m.TrailMapPlaceholder),
+      import('./features/reports/components/tail-map-canvas/tail-map-canvas')
+        .then(m => m.TailMapCanvasComponent),
   },
   {
     path: 'reports/zone-retention',
     loadComponent: () =>
-      import('./features/reports/zone-retention.placeholder')
-        .then(m => m.ZoneRetentionPlaceholder),
+      import('./features/reports/components/zone-retention-report/zone-retention-report')
+        .then(m => m.ZoneRetentionReportComponent),
   },
 ];

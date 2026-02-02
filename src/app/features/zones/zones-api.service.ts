@@ -45,6 +45,10 @@ export class ZonesApiService {
         return this.http.get<ApiResponse<ZoneResponse[]>>(`${this.apiUrl}/floormap/${mapId}`);
     }
 
+    listAll(): Observable<ApiResponse<ZoneResponse[]>> {
+        return this.http.get<ApiResponse<ZoneResponse[]>>(this.apiUrl);
+    }
+
     create(mapId: string | number, name: string, points: DraftPoint[], description?: string): Observable<ApiResponse<ZoneResponse>> {
         const payload: ZoneRequest = {
             floorMapId: Number(mapId), // Use floorMapId instead of mapId
